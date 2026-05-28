@@ -1,0 +1,4 @@
+/// Bundled image paths (see [pubspec.yaml] flutter.assets).
+abstract final class AppAssets {
+  static const String logo = 'assets/updates.png';
+}
