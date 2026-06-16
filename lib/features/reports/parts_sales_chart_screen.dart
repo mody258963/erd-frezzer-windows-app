@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/auth/auth_cubit.dart';
+import '../../core/branch/branch_filter_scope.dart';
+import '../../core/events/app_refresh_bus.dart';
 import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
-import '../../data/models/branch_model.dart';
 import '../../data/models/part_sales_chart_model.dart';
 import '../../data/repositories/report_repository.dart';
 import '../../di/injection.dart';
 import '../../router/route_paths.dart';
-import '../shared/branch_dropdown.dart';
 import '../shared/loading_error.dart';
 import '../shared/page_header.dart';
 import '../shared/parts_sales_line_chart.dart';
@@ -30,25 +28,23 @@ class _PartsSalesChartScreenState extends State<PartsSalesChartScreen> {
   int _year = DateTime.now().year;
   int _limit = 10;
   String _rankBy = 'units';
-  String? _branchId;
-  List<BranchModel> _branches = [];
 
   @override
   void initState() {
     super.initState();
-    _branchId = context.read<AuthCubit>().state.user?.branchId;
-    _loadBranches();
+    getIt<AppRefreshBus>().addListener(_onAppRefresh);
     _load();
   }
 
-  bool get _canPickBranch =>
-      context.read<AuthCubit>().state.user?.branchId == null;
+  @override
+  void dispose() {
+    getIt<AppRefreshBus>().removeListener(_onAppRefresh);
+    super.dispose();
+  }
 
-  Future<void> _loadBranches() async {
-    if (!_canPickBranch) return;
-    try {
-      _branches = await loadActiveBranches();
-    } catch (_) {}
+  void _onAppRefresh(AppRefreshKind kind) {
+    if (!mounted || kind != AppRefreshKind.branchFilter) return;
+    _load();
   }
 
   Future<void> _load() async {
@@ -61,7 +57,7 @@ class _PartsSalesChartScreenState extends State<PartsSalesChartScreen> {
         year: _year,
         limit: _limit,
         rankBy: _rankBy,
-        branchId: _branchId,
+        branchId: apiBranchIdFromContext(context),
       );
       setState(() {
         _data = PartSalesChartData.fromJson(raw);
@@ -149,29 +145,6 @@ class _PartsSalesChartScreenState extends State<PartsSalesChartScreen> {
                   },
                 ),
               ),
-              if (_canPickBranch && _branches.isNotEmpty)
-                SizedBox(
-                  width: 220,
-                  child: DropdownButtonFormField<String?>(
-                    value: _branchId != null &&
-                            _branches.any((b) => b.id == _branchId)
-                        ? _branchId
-                        : null,
-                    decoration: InputDecoration(labelText: l10n.selectBranch),
-                    isExpanded: true,
-                    items: [
-                      DropdownMenuItem<String?>(
-                        child: Text(l10n.allBranches),
-                      ),
-                      for (final b in _branches)
-                        DropdownMenuItem(
-                          value: b.id,
-                          child: Text(b.name, overflow: TextOverflow.ellipsis),
-                        ),
-                    ],
-                    onChanged: (v) => setState(() => _branchId = v),
-                  ),
-                ),
               FilledButton.icon(
                 onPressed: _loading ? null : _load,
                 icon: const Icon(Icons.show_chart, size: 18),

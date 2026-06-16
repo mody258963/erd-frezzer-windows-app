@@ -1,36 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_cubit.dart';
 import '../../core/auth/role_permissions.dart';
 import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
+import '../../core/events/app_refresh_bus.dart';
+import '../../core/logging/app_logger.dart';
+import '../../core/printer/printer_print_helper.dart';
+import '../../core/utils/return_approval_helper.dart';
+import '../../router/route_paths.dart';
+import 'approve_return_dialog.dart';
+import 'package:dio/dio.dart';
 import '../../data/models/invoice_model.dart';
 import '../../data/models/user_role.dart';
 import '../../data/repositories/invoice_repository.dart';
 import '../../data/repositories/return_repository.dart';
 import '../../di/injection.dart';
 import '../shared/entity_list_tile.dart';
-import '../shared/form_field_spacing.dart';
 import '../shared/loading_error.dart';
 import '../shared/page_header.dart';
 import '../shared/status_chip.dart';
-
-class _ReturnLineDraft {
-  _ReturnLineDraft({
-    required this.partId,
-    required this.maxQty,
-    required this.unitPrice,
-    this.partLabel,
-  });
-
-  final String partId;
-  final int maxQty;
-  final double unitPrice;
-  final String? partLabel;
-  int returnQty = 0;
-  String condition = 'sellable';
-}
 
 class ReturnsScreen extends StatefulWidget {
   const ReturnsScreen({super.key});
@@ -47,7 +38,116 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
   @override
   void initState() {
     super.initState();
+    getIt<AppRefreshBus>().addListener(_onAppRefresh);
     _load();
+  }
+
+  @override
+  void dispose() {
+    getIt<AppRefreshBus>().removeListener(_onAppRefresh);
+    super.dispose();
+  }
+
+  void _onAppRefresh(AppRefreshKind kind) {
+    if (!mounted || kind != AppRefreshKind.branchFilter) return;
+    _load();
+  }
+
+  Future<void> _approveReturn(Map<String, dynamic> row) async {
+    final l10n = context.l10n;
+    final id = row['id'] as String;
+    var returnRow = row;
+
+    List<ReturnLineInfo> lines = parseReturnItems(returnRow);
+    if (lines.isEmpty) {
+      try {
+        final detail = await getIt<ReturnRepository>().get(id);
+        lines = parseReturnItems(detail);
+        returnRow = detail;
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e')),
+        );
+        return;
+      }
+    }
+
+    if (!mounted) return;
+
+    final resolution = await ApproveReturnDialog.show(
+      context,
+      returnRow: returnRow,
+      lines: lines,
+    );
+    if (resolution == null || !mounted) return;
+
+    AppLogger.action('returns.approve', {'id': id, 'resolution': resolution});
+
+    try {
+      await getIt<ReturnRepository>().approve(id, resolution: resolution);
+      if (!mounted) return;
+
+      await _refreshLinkedInvoice(returnRow);
+
+      if (!mounted) return;
+
+      getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
+      getIt<AppRefreshBus>().notify(AppRefreshKind.inventory);
+      getIt<AppRefreshBus>().notify(AppRefreshKind.invoices);
+
+      final invoiceId = invoiceIdFromReturnRow(returnRow);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.returnApprovedRefresh),
+          backgroundColor: Colors.green.shade700,
+          action: invoiceId != null
+              ? SnackBarAction(
+                  label: l10n.reprintInvoice,
+                  onPressed: () => _reprintInvoice(invoiceId),
+                )
+              : null,
+        ),
+      );
+      await _load();
+    } on DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLogger.dioMessage(e))),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('$e')),
+      );
+    }
+  }
+
+  Future<void> _reprintInvoice(String invoiceId) async {
+    final l10n = context.l10n;
+    try {
+      await printInvoiceReceiptById(invoiceId);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.printSuccess)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.printFailed(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _refreshLinkedInvoice(Map<String, dynamic> returnRow) async {
+    final invoiceId = invoiceIdFromReturnRow(returnRow);
+    if (invoiceId == null) return;
+    AppLogger.action('returns.refreshInvoice', {'invoiceId': invoiceId});
+    try {
+      await getIt<InvoiceRepository>().get(invoiceId);
+    } catch (e) {
+      AppLogger.warning('returns.refreshInvoice.failed', e);
+    }
   }
 
   Future<void> _load() async {
@@ -80,20 +180,6 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
     );
   }
 
-  List<_ReturnLineDraft> _linesFromInvoice(InvoiceModel inv) {
-    return [
-      for (final line in inv.items)
-        _ReturnLineDraft(
-          partId: line.partId,
-          maxQty: line.quantity,
-          unitPrice: line.unitPrice ?? 0,
-          partLabel: line.partCode != null
-              ? '${line.partCode} — ${line.partName ?? line.partId}'
-              : (line.partName ?? line.partId),
-        ),
-    ];
-  }
-
   Future<void> _create() async {
     final l10n = context.l10n;
     final role = context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
@@ -101,13 +187,8 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
 
     List<InvoiceModel> invoices;
     try {
-      invoices = await getIt<InvoiceRepository>().list(perPage: 100);
-      invoices = invoices
-          .where((i) {
-            final s = (i.status ?? '').toLowerCase();
-            return s != 'cancelled' && s != 'canceled' && s != 'void';
-          })
-          .toList();
+      final all = await getIt<InvoiceRepository>().list(perPage: 100);
+      invoices = all.where((i) => i.canCreateReturn).toList();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -119,65 +200,26 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
     if (invoices.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.noData)),
+        SnackBar(content: Text(l10n.noInvoicesAvailableForReturn)),
       );
       return;
     }
 
     if (!mounted) return;
 
-    final result = await showDialog<({InvoiceModel invoice, String reason, List<_ReturnLineDraft> lines})?>(
+    final selectedId = await showDialog<String?>(
       context: context,
-      builder: (ctx) => _CreateReturnDialog(
+      builder: (ctx) => _InvoicePickerDialog(
         invoices: invoices,
         invoiceLabel: (inv) => _invoiceLabel(ctx, inv),
-        linesFromInvoice: _linesFromInvoice,
       ),
     );
 
-    if (result == null) return;
-    final selectedInvoice = result.invoice;
-    final lines = result.lines;
+    if (selectedId == null || !mounted) return;
 
-    final returnItems = <Map<String, dynamic>>[];
-    for (final line in lines) {
-      if (line.returnQty <= 0) continue;
-      returnItems.add({
-        'part_id': line.partId,
-        'quantity': line.returnQty,
-        'unit_price': line.unitPrice,
-        'condition': line.condition,
-      });
-    }
-
-    if (returnItems.isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.selectReturnLines)),
-      );
-      return;
-    }
-
-    try {
-      await getIt<ReturnRepository>().create({
-        'return_type': 'customer_return',
-        'reference_type': 'invoice',
-        'reference_id': selectedInvoice.id,
-        'customer_id': selectedInvoice.customerId,
-        'branch_id': selectedInvoice.branchId,
-        'reason': result.reason,
-        'items': returnItems,
-      });
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.returnSaved)),
-      );
+    final created = await context.push<bool>(RoutePaths.invoiceReturn(selectedId));
+    if (created == true && mounted) {
       await _load();
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
     }
   }
 
@@ -276,19 +318,7 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     FilledButton.tonal(
-                                      onPressed: () async {
-                                        try {
-                                          await getIt<ReturnRepository>()
-                                              .approve(id);
-                                          await _load();
-                                        } catch (e) {
-                                          if (!context.mounted) return;
-                                          ScaffoldMessenger.of(context)
-                                              .showSnackBar(
-                                            SnackBar(content: Text('$e')),
-                                          );
-                                        }
-                                      },
+                                      onPressed: () => _approveReturn(r),
                                       child: Text(l10n.approve),
                                     ),
                                     const SizedBox(width: 8),
@@ -313,202 +343,59 @@ class _ReturnsScreenState extends State<ReturnsScreen> {
   }
 }
 
-class _CreateReturnDialog extends StatefulWidget {
-  const _CreateReturnDialog({
+class _InvoicePickerDialog extends StatefulWidget {
+  const _InvoicePickerDialog({
     required this.invoices,
     required this.invoiceLabel,
-    required this.linesFromInvoice,
   });
 
   final List<InvoiceModel> invoices;
   final String Function(InvoiceModel) invoiceLabel;
-  final List<_ReturnLineDraft> Function(InvoiceModel) linesFromInvoice;
 
   @override
-  State<_CreateReturnDialog> createState() => _CreateReturnDialogState();
+  State<_InvoicePickerDialog> createState() => _InvoicePickerDialogState();
 }
 
-class _CreateReturnDialogState extends State<_CreateReturnDialog> {
-  late InvoiceModel _invoice;
-  late List<_ReturnLineDraft> _lines;
-  final _reason = TextEditingController();
-  final _qtyControllers = <String, TextEditingController>{};
-  bool _loadingInvoice = false;
+class _InvoicePickerDialogState extends State<_InvoicePickerDialog> {
+  late String _selectedId;
 
   @override
   void initState() {
     super.initState();
-    _invoice = widget.invoices.first;
-    _lines = [];
-    _loadInvoiceDetails(_invoice.id);
-  }
-
-  Future<void> _loadInvoiceDetails(String id) async {
-    setState(() => _loadingInvoice = true);
-    try {
-      final full = await getIt<InvoiceRepository>().get(id);
-      if (!mounted) return;
-      setState(() {
-        _invoice = full;
-        _resetLines();
-        _loadingInvoice = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() => _loadingInvoice = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('$e')),
-      );
-    }
-  }
-
-  @override
-  void dispose() {
-    _reason.dispose();
-    for (final c in _qtyControllers.values) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  void _resetLines() {
-    for (final c in _qtyControllers.values) {
-      c.dispose();
-    }
-    _qtyControllers.clear();
-    _lines = widget.linesFromInvoice(_invoice);
-    for (final line in _lines) {
-      _qtyControllers[line.partId] = TextEditingController();
-    }
-  }
-
-  void _submit() {
-    final l10n = context.l10n;
-    for (final line in _lines) {
-      final q = int.tryParse(_qtyControllers[line.partId]?.text ?? '') ?? 0;
-      line.returnQty = q.clamp(0, line.maxQty);
-    }
-    if (_lines.every((l) => l.returnQty <= 0)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.selectReturnLines)),
-      );
-      return;
-    }
-    Navigator.pop(
-      context,
-      (
-        invoice: _invoice,
-        reason: _reason.text.trim(),
-        lines: _lines,
-      ),
-    );
+    _selectedId = widget.invoices.firstWhere(
+      (i) => i.canReturnPartial || i.canCreateReturn,
+      orElse: () => widget.invoices.first,
+    ).id;
   }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final selected = widget.invoices.firstWhere((i) => i.id == _selectedId);
 
     return AlertDialog(
       title: Text(l10n.newReturn),
       content: SizedBox(
-        width: 520,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: spacedFormFields([
-              DropdownButtonFormField<String>(
-                value: _invoice.id,
-                decoration: InputDecoration(labelText: l10n.selectInvoice),
-                isExpanded: true,
-                items: [
-                  for (final inv in widget.invoices)
-                    DropdownMenuItem(
-                      value: inv.id,
-                      child: Text(widget.invoiceLabel(inv)),
-                    ),
-                ],
-                onChanged: (id) {
-                  if (id == null) return;
-                  _loadInvoiceDetails(id);
-                },
-              ),
-              if (_loadingInvoice)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Center(child: CircularProgressIndicator()),
+        width: 420,
+        child: DropdownButtonFormField<String>(
+          initialValue: _selectedId,
+          decoration: InputDecoration(labelText: l10n.selectInvoice),
+          isExpanded: true,
+          items: [
+            for (final inv in widget.invoices)
+              DropdownMenuItem(
+                value: inv.id,
+                enabled: inv.canCreateReturn,
+                child: Text(
+                  inv.isReturned
+                      ? '${widget.invoiceLabel(inv)} · ${l10n.invoiceReturnStatusReturned}'
+                      : widget.invoiceLabel(inv),
                 ),
-              TextField(
-                controller: _reason,
-                decoration: InputDecoration(labelText: l10n.returnReason),
-                maxLines: 2,
               ),
-              if (_lines.isEmpty)
-                Text(
-                  l10n.noInvoiceLines,
-                  style: TextStyle(color: Theme.of(context).colorScheme.error),
-                )
-              else
-                ..._lines.map((line) {
-                  final qtyCtrl = _qtyControllers[line.partId]!;
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          Text(
-                            line.partLabel ?? line.partId,
-                            style: Theme.of(context).textTheme.titleSmall,
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Expanded(
-                                child: TextField(
-                                  controller: qtyCtrl,
-                                  decoration: InputDecoration(
-                                    labelText:
-                                        '${l10n.returnQty} (max ${line.maxQty})',
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: DropdownButtonFormField<String>(
-                                  value: line.condition,
-                                  decoration: InputDecoration(
-                                    labelText: l10n.returnCondition,
-                                  ),
-                                  isExpanded: true,
-                                  items: [
-                                    DropdownMenuItem(
-                                      value: 'sellable',
-                                      child: Text(l10n.conditionSellable),
-                                    ),
-                                    DropdownMenuItem(
-                                      value: 'defective',
-                                      child: Text(l10n.conditionDefective),
-                                    ),
-                                  ],
-                                  onChanged: (v) {
-                                    if (v != null) {
-                                      setState(() => line.condition = v);
-                                    }
-                                  },
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-            ]),
-          ),
+          ],
+          onChanged: (id) {
+            if (id != null) setState(() => _selectedId = id);
+          },
         ),
       ),
       actions: [
@@ -517,7 +404,9 @@ class _CreateReturnDialogState extends State<_CreateReturnDialog> {
           child: Text(l10n.cancel),
         ),
         FilledButton(
-          onPressed: _submit,
+          onPressed: selected.canCreateReturn
+              ? () => Navigator.pop(context, _selectedId)
+              : null,
           child: Text(l10n.create),
         ),
       ],

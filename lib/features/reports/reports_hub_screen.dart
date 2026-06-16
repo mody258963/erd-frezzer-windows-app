@@ -18,6 +18,14 @@ class ReportsHubScreen extends StatelessWidget {
     final items = <_ReportCardData>[
       _ReportCardData(
         kind: ReportKind.sales,
+        icon: Icons.account_balance_outlined,
+        title: l10n.financialReportTitle,
+        description: l10n.reportDescFinancial,
+        path: RoutePaths.reportsFinancial,
+        color: AppColors.success,
+      ),
+      _ReportCardData(
+        kind: ReportKind.sales,
         icon: Icons.point_of_sale_outlined,
         title: l10n.salesReportTitle,
         description: l10n.reportDescSales,

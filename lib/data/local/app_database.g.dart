@@ -35,6 +35,15 @@ class $PartsTable extends Parts with TableInfo<$PartsTable, Part> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _unitMeta = const VerificationMeta('unit');
+  @override
+  late final GeneratedColumn<String> unit = GeneratedColumn<String>(
+    'unit',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _sellPriceMeta = const VerificationMeta(
     'sellPrice',
   );
@@ -88,6 +97,7 @@ class $PartsTable extends Parts with TableInfo<$PartsTable, Part> {
     id,
     code,
     name,
+    unit,
     sellPrice,
     imageUrl,
     isActive,
@@ -125,6 +135,12 @@ class $PartsTable extends Parts with TableInfo<$PartsTable, Part> {
       );
     } else if (isInserting) {
       context.missing(_nameMeta);
+    }
+    if (data.containsKey('unit')) {
+      context.handle(
+        _unitMeta,
+        unit.isAcceptableOrUnknown(data['unit']!, _unitMeta),
+      );
     }
     if (data.containsKey('sell_price')) {
       context.handle(
@@ -173,6 +189,10 @@ class $PartsTable extends Parts with TableInfo<$PartsTable, Part> {
         DriftSqlType.string,
         data['${effectivePrefix}name'],
       )!,
+      unit: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unit'],
+      ),
       sellPrice: attachedDatabase.typeMapping.read(
         DriftSqlType.double,
         data['${effectivePrefix}sell_price'],
@@ -202,6 +222,7 @@ class Part extends DataClass implements Insertable<Part> {
   final String id;
   final String code;
   final String name;
+  final String? unit;
   final double sellPrice;
   final String? imageUrl;
   final bool isActive;
@@ -210,6 +231,7 @@ class Part extends DataClass implements Insertable<Part> {
     required this.id,
     required this.code,
     required this.name,
+    this.unit,
     required this.sellPrice,
     this.imageUrl,
     required this.isActive,
@@ -221,6 +243,9 @@ class Part extends DataClass implements Insertable<Part> {
     map['id'] = Variable<String>(id);
     map['code'] = Variable<String>(code);
     map['name'] = Variable<String>(name);
+    if (!nullToAbsent || unit != null) {
+      map['unit'] = Variable<String>(unit);
+    }
     map['sell_price'] = Variable<double>(sellPrice);
     if (!nullToAbsent || imageUrl != null) {
       map['image_url'] = Variable<String>(imageUrl);
@@ -237,6 +262,7 @@ class Part extends DataClass implements Insertable<Part> {
       id: Value(id),
       code: Value(code),
       name: Value(name),
+      unit: unit == null && nullToAbsent ? const Value.absent() : Value(unit),
       sellPrice: Value(sellPrice),
       imageUrl: imageUrl == null && nullToAbsent
           ? const Value.absent()
@@ -257,6 +283,7 @@ class Part extends DataClass implements Insertable<Part> {
       id: serializer.fromJson<String>(json['id']),
       code: serializer.fromJson<String>(json['code']),
       name: serializer.fromJson<String>(json['name']),
+      unit: serializer.fromJson<String?>(json['unit']),
       sellPrice: serializer.fromJson<double>(json['sellPrice']),
       imageUrl: serializer.fromJson<String?>(json['imageUrl']),
       isActive: serializer.fromJson<bool>(json['isActive']),
@@ -270,6 +297,7 @@ class Part extends DataClass implements Insertable<Part> {
       'id': serializer.toJson<String>(id),
       'code': serializer.toJson<String>(code),
       'name': serializer.toJson<String>(name),
+      'unit': serializer.toJson<String?>(unit),
       'sellPrice': serializer.toJson<double>(sellPrice),
       'imageUrl': serializer.toJson<String?>(imageUrl),
       'isActive': serializer.toJson<bool>(isActive),
@@ -281,6 +309,7 @@ class Part extends DataClass implements Insertable<Part> {
     String? id,
     String? code,
     String? name,
+    Value<String?> unit = const Value.absent(),
     double? sellPrice,
     Value<String?> imageUrl = const Value.absent(),
     bool? isActive,
@@ -289,6 +318,7 @@ class Part extends DataClass implements Insertable<Part> {
     id: id ?? this.id,
     code: code ?? this.code,
     name: name ?? this.name,
+    unit: unit.present ? unit.value : this.unit,
     sellPrice: sellPrice ?? this.sellPrice,
     imageUrl: imageUrl.present ? imageUrl.value : this.imageUrl,
     isActive: isActive ?? this.isActive,
@@ -299,6 +329,7 @@ class Part extends DataClass implements Insertable<Part> {
       id: data.id.present ? data.id.value : this.id,
       code: data.code.present ? data.code.value : this.code,
       name: data.name.present ? data.name.value : this.name,
+      unit: data.unit.present ? data.unit.value : this.unit,
       sellPrice: data.sellPrice.present ? data.sellPrice.value : this.sellPrice,
       imageUrl: data.imageUrl.present ? data.imageUrl.value : this.imageUrl,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
@@ -312,6 +343,7 @@ class Part extends DataClass implements Insertable<Part> {
           ..write('id: $id, ')
           ..write('code: $code, ')
           ..write('name: $name, ')
+          ..write('unit: $unit, ')
           ..write('sellPrice: $sellPrice, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('isActive: $isActive, ')
@@ -321,8 +353,16 @@ class Part extends DataClass implements Insertable<Part> {
   }
 
   @override
-  int get hashCode =>
-      Object.hash(id, code, name, sellPrice, imageUrl, isActive, syncedAt);
+  int get hashCode => Object.hash(
+    id,
+    code,
+    name,
+    unit,
+    sellPrice,
+    imageUrl,
+    isActive,
+    syncedAt,
+  );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -330,6 +370,7 @@ class Part extends DataClass implements Insertable<Part> {
           other.id == this.id &&
           other.code == this.code &&
           other.name == this.name &&
+          other.unit == this.unit &&
           other.sellPrice == this.sellPrice &&
           other.imageUrl == this.imageUrl &&
           other.isActive == this.isActive &&
@@ -340,6 +381,7 @@ class PartsCompanion extends UpdateCompanion<Part> {
   final Value<String> id;
   final Value<String> code;
   final Value<String> name;
+  final Value<String?> unit;
   final Value<double> sellPrice;
   final Value<String?> imageUrl;
   final Value<bool> isActive;
@@ -349,6 +391,7 @@ class PartsCompanion extends UpdateCompanion<Part> {
     this.id = const Value.absent(),
     this.code = const Value.absent(),
     this.name = const Value.absent(),
+    this.unit = const Value.absent(),
     this.sellPrice = const Value.absent(),
     this.imageUrl = const Value.absent(),
     this.isActive = const Value.absent(),
@@ -359,6 +402,7 @@ class PartsCompanion extends UpdateCompanion<Part> {
     required String id,
     required String code,
     required String name,
+    this.unit = const Value.absent(),
     required double sellPrice,
     this.imageUrl = const Value.absent(),
     this.isActive = const Value.absent(),
@@ -372,6 +416,7 @@ class PartsCompanion extends UpdateCompanion<Part> {
     Expression<String>? id,
     Expression<String>? code,
     Expression<String>? name,
+    Expression<String>? unit,
     Expression<double>? sellPrice,
     Expression<String>? imageUrl,
     Expression<bool>? isActive,
@@ -382,6 +427,7 @@ class PartsCompanion extends UpdateCompanion<Part> {
       if (id != null) 'id': id,
       if (code != null) 'code': code,
       if (name != null) 'name': name,
+      if (unit != null) 'unit': unit,
       if (sellPrice != null) 'sell_price': sellPrice,
       if (imageUrl != null) 'image_url': imageUrl,
       if (isActive != null) 'is_active': isActive,
@@ -394,6 +440,7 @@ class PartsCompanion extends UpdateCompanion<Part> {
     Value<String>? id,
     Value<String>? code,
     Value<String>? name,
+    Value<String?>? unit,
     Value<double>? sellPrice,
     Value<String?>? imageUrl,
     Value<bool>? isActive,
@@ -404,6 +451,7 @@ class PartsCompanion extends UpdateCompanion<Part> {
       id: id ?? this.id,
       code: code ?? this.code,
       name: name ?? this.name,
+      unit: unit ?? this.unit,
       sellPrice: sellPrice ?? this.sellPrice,
       imageUrl: imageUrl ?? this.imageUrl,
       isActive: isActive ?? this.isActive,
@@ -423,6 +471,9 @@ class PartsCompanion extends UpdateCompanion<Part> {
     }
     if (name.present) {
       map['name'] = Variable<String>(name.value);
+    }
+    if (unit.present) {
+      map['unit'] = Variable<String>(unit.value);
     }
     if (sellPrice.present) {
       map['sell_price'] = Variable<double>(sellPrice.value);
@@ -448,6 +499,7 @@ class PartsCompanion extends UpdateCompanion<Part> {
           ..write('id: $id, ')
           ..write('code: $code, ')
           ..write('name: $name, ')
+          ..write('unit: $unit, ')
           ..write('sellPrice: $sellPrice, ')
           ..write('imageUrl: $imageUrl, ')
           ..write('isActive: $isActive, ')
@@ -488,11 +540,11 @@ class $StockRowsTable extends StockRows
     'quantity',
   );
   @override
-  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
     'quantity',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
   @override
@@ -551,7 +603,7 @@ class $StockRowsTable extends StockRows
         data['${effectivePrefix}branch_id'],
       )!,
       quantity: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.double,
         data['${effectivePrefix}quantity'],
       )!,
     );
@@ -566,7 +618,7 @@ class $StockRowsTable extends StockRows
 class StockRow extends DataClass implements Insertable<StockRow> {
   final String partId;
   final String branchId;
-  final int quantity;
+  final double quantity;
   const StockRow({
     required this.partId,
     required this.branchId,
@@ -577,7 +629,7 @@ class StockRow extends DataClass implements Insertable<StockRow> {
     final map = <String, Expression>{};
     map['part_id'] = Variable<String>(partId);
     map['branch_id'] = Variable<String>(branchId);
-    map['quantity'] = Variable<int>(quantity);
+    map['quantity'] = Variable<double>(quantity);
     return map;
   }
 
@@ -597,7 +649,7 @@ class StockRow extends DataClass implements Insertable<StockRow> {
     return StockRow(
       partId: serializer.fromJson<String>(json['partId']),
       branchId: serializer.fromJson<String>(json['branchId']),
-      quantity: serializer.fromJson<int>(json['quantity']),
+      quantity: serializer.fromJson<double>(json['quantity']),
     );
   }
   @override
@@ -606,11 +658,11 @@ class StockRow extends DataClass implements Insertable<StockRow> {
     return <String, dynamic>{
       'partId': serializer.toJson<String>(partId),
       'branchId': serializer.toJson<String>(branchId),
-      'quantity': serializer.toJson<int>(quantity),
+      'quantity': serializer.toJson<double>(quantity),
     };
   }
 
-  StockRow copyWith({String? partId, String? branchId, int? quantity}) =>
+  StockRow copyWith({String? partId, String? branchId, double? quantity}) =>
       StockRow(
         partId: partId ?? this.partId,
         branchId: branchId ?? this.branchId,
@@ -648,7 +700,7 @@ class StockRow extends DataClass implements Insertable<StockRow> {
 class StockRowsCompanion extends UpdateCompanion<StockRow> {
   final Value<String> partId;
   final Value<String> branchId;
-  final Value<int> quantity;
+  final Value<double> quantity;
   final Value<int> rowid;
   const StockRowsCompanion({
     this.partId = const Value.absent(),
@@ -659,7 +711,7 @@ class StockRowsCompanion extends UpdateCompanion<StockRow> {
   StockRowsCompanion.insert({
     required String partId,
     required String branchId,
-    required int quantity,
+    required double quantity,
     this.rowid = const Value.absent(),
   }) : partId = Value(partId),
        branchId = Value(branchId),
@@ -667,7 +719,7 @@ class StockRowsCompanion extends UpdateCompanion<StockRow> {
   static Insertable<StockRow> custom({
     Expression<String>? partId,
     Expression<String>? branchId,
-    Expression<int>? quantity,
+    Expression<double>? quantity,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -681,7 +733,7 @@ class StockRowsCompanion extends UpdateCompanion<StockRow> {
   StockRowsCompanion copyWith({
     Value<String>? partId,
     Value<String>? branchId,
-    Value<int>? quantity,
+    Value<double>? quantity,
     Value<int>? rowid,
   }) {
     return StockRowsCompanion(
@@ -702,7 +754,7 @@ class StockRowsCompanion extends UpdateCompanion<StockRow> {
       map['branch_id'] = Variable<String>(branchId.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<int>(quantity.value);
+      map['quantity'] = Variable<double>(quantity.value);
     }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
@@ -779,6 +831,29 @@ class $CustomersTable extends Customers
         requiredDuringInsert: false,
         defaultValue: const Constant(0),
       );
+  static const VerificationMeta _settlementCycleMeta = const VerificationMeta(
+    'settlementCycle',
+  );
+  @override
+  late final GeneratedColumn<String> settlementCycle = GeneratedColumn<String>(
+    'settlement_cycle',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastSettledAtMeta = const VerificationMeta(
+    'lastSettledAt',
+  );
+  @override
+  late final GeneratedColumn<DateTime> lastSettledAt =
+      GeneratedColumn<DateTime>(
+        'last_settled_at',
+        aliasedName,
+        true,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _isActiveMeta = const VerificationMeta(
     'isActive',
   );
@@ -812,6 +887,8 @@ class $CustomersTable extends Customers
     type,
     creditLimit,
     outstandingBalance,
+    settlementCycle,
+    lastSettledAt,
     isActive,
     syncedAt,
   ];
@@ -866,6 +943,24 @@ class $CustomersTable extends Customers
         ),
       );
     }
+    if (data.containsKey('settlement_cycle')) {
+      context.handle(
+        _settlementCycleMeta,
+        settlementCycle.isAcceptableOrUnknown(
+          data['settlement_cycle']!,
+          _settlementCycleMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_settled_at')) {
+      context.handle(
+        _lastSettledAtMeta,
+        lastSettledAt.isAcceptableOrUnknown(
+          data['last_settled_at']!,
+          _lastSettledAtMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_active')) {
       context.handle(
         _isActiveMeta,
@@ -907,6 +1002,14 @@ class $CustomersTable extends Customers
         DriftSqlType.double,
         data['${effectivePrefix}outstanding_balance'],
       )!,
+      settlementCycle: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}settlement_cycle'],
+      ),
+      lastSettledAt: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}last_settled_at'],
+      ),
       isActive: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_active'],
@@ -930,6 +1033,8 @@ class Customer extends DataClass implements Insertable<Customer> {
   final String type;
   final double creditLimit;
   final double outstandingBalance;
+  final String? settlementCycle;
+  final DateTime? lastSettledAt;
   final bool isActive;
   final DateTime? syncedAt;
   const Customer({
@@ -938,6 +1043,8 @@ class Customer extends DataClass implements Insertable<Customer> {
     required this.type,
     required this.creditLimit,
     required this.outstandingBalance,
+    this.settlementCycle,
+    this.lastSettledAt,
     required this.isActive,
     this.syncedAt,
   });
@@ -949,6 +1056,12 @@ class Customer extends DataClass implements Insertable<Customer> {
     map['type'] = Variable<String>(type);
     map['credit_limit'] = Variable<double>(creditLimit);
     map['outstanding_balance'] = Variable<double>(outstandingBalance);
+    if (!nullToAbsent || settlementCycle != null) {
+      map['settlement_cycle'] = Variable<String>(settlementCycle);
+    }
+    if (!nullToAbsent || lastSettledAt != null) {
+      map['last_settled_at'] = Variable<DateTime>(lastSettledAt);
+    }
     map['is_active'] = Variable<bool>(isActive);
     if (!nullToAbsent || syncedAt != null) {
       map['synced_at'] = Variable<DateTime>(syncedAt);
@@ -963,6 +1076,12 @@ class Customer extends DataClass implements Insertable<Customer> {
       type: Value(type),
       creditLimit: Value(creditLimit),
       outstandingBalance: Value(outstandingBalance),
+      settlementCycle: settlementCycle == null && nullToAbsent
+          ? const Value.absent()
+          : Value(settlementCycle),
+      lastSettledAt: lastSettledAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastSettledAt),
       isActive: Value(isActive),
       syncedAt: syncedAt == null && nullToAbsent
           ? const Value.absent()
@@ -983,6 +1102,8 @@ class Customer extends DataClass implements Insertable<Customer> {
       outstandingBalance: serializer.fromJson<double>(
         json['outstandingBalance'],
       ),
+      settlementCycle: serializer.fromJson<String?>(json['settlementCycle']),
+      lastSettledAt: serializer.fromJson<DateTime?>(json['lastSettledAt']),
       isActive: serializer.fromJson<bool>(json['isActive']),
       syncedAt: serializer.fromJson<DateTime?>(json['syncedAt']),
     );
@@ -996,6 +1117,8 @@ class Customer extends DataClass implements Insertable<Customer> {
       'type': serializer.toJson<String>(type),
       'creditLimit': serializer.toJson<double>(creditLimit),
       'outstandingBalance': serializer.toJson<double>(outstandingBalance),
+      'settlementCycle': serializer.toJson<String?>(settlementCycle),
+      'lastSettledAt': serializer.toJson<DateTime?>(lastSettledAt),
       'isActive': serializer.toJson<bool>(isActive),
       'syncedAt': serializer.toJson<DateTime?>(syncedAt),
     };
@@ -1007,6 +1130,8 @@ class Customer extends DataClass implements Insertable<Customer> {
     String? type,
     double? creditLimit,
     double? outstandingBalance,
+    Value<String?> settlementCycle = const Value.absent(),
+    Value<DateTime?> lastSettledAt = const Value.absent(),
     bool? isActive,
     Value<DateTime?> syncedAt = const Value.absent(),
   }) => Customer(
@@ -1015,6 +1140,12 @@ class Customer extends DataClass implements Insertable<Customer> {
     type: type ?? this.type,
     creditLimit: creditLimit ?? this.creditLimit,
     outstandingBalance: outstandingBalance ?? this.outstandingBalance,
+    settlementCycle: settlementCycle.present
+        ? settlementCycle.value
+        : this.settlementCycle,
+    lastSettledAt: lastSettledAt.present
+        ? lastSettledAt.value
+        : this.lastSettledAt,
     isActive: isActive ?? this.isActive,
     syncedAt: syncedAt.present ? syncedAt.value : this.syncedAt,
   );
@@ -1029,6 +1160,12 @@ class Customer extends DataClass implements Insertable<Customer> {
       outstandingBalance: data.outstandingBalance.present
           ? data.outstandingBalance.value
           : this.outstandingBalance,
+      settlementCycle: data.settlementCycle.present
+          ? data.settlementCycle.value
+          : this.settlementCycle,
+      lastSettledAt: data.lastSettledAt.present
+          ? data.lastSettledAt.value
+          : this.lastSettledAt,
       isActive: data.isActive.present ? data.isActive.value : this.isActive,
       syncedAt: data.syncedAt.present ? data.syncedAt.value : this.syncedAt,
     );
@@ -1042,6 +1179,8 @@ class Customer extends DataClass implements Insertable<Customer> {
           ..write('type: $type, ')
           ..write('creditLimit: $creditLimit, ')
           ..write('outstandingBalance: $outstandingBalance, ')
+          ..write('settlementCycle: $settlementCycle, ')
+          ..write('lastSettledAt: $lastSettledAt, ')
           ..write('isActive: $isActive, ')
           ..write('syncedAt: $syncedAt')
           ..write(')'))
@@ -1055,6 +1194,8 @@ class Customer extends DataClass implements Insertable<Customer> {
     type,
     creditLimit,
     outstandingBalance,
+    settlementCycle,
+    lastSettledAt,
     isActive,
     syncedAt,
   );
@@ -1067,6 +1208,8 @@ class Customer extends DataClass implements Insertable<Customer> {
           other.type == this.type &&
           other.creditLimit == this.creditLimit &&
           other.outstandingBalance == this.outstandingBalance &&
+          other.settlementCycle == this.settlementCycle &&
+          other.lastSettledAt == this.lastSettledAt &&
           other.isActive == this.isActive &&
           other.syncedAt == this.syncedAt);
 }
@@ -1077,6 +1220,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
   final Value<String> type;
   final Value<double> creditLimit;
   final Value<double> outstandingBalance;
+  final Value<String?> settlementCycle;
+  final Value<DateTime?> lastSettledAt;
   final Value<bool> isActive;
   final Value<DateTime?> syncedAt;
   final Value<int> rowid;
@@ -1086,6 +1231,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     this.type = const Value.absent(),
     this.creditLimit = const Value.absent(),
     this.outstandingBalance = const Value.absent(),
+    this.settlementCycle = const Value.absent(),
+    this.lastSettledAt = const Value.absent(),
     this.isActive = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1096,6 +1243,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     required String type,
     this.creditLimit = const Value.absent(),
     this.outstandingBalance = const Value.absent(),
+    this.settlementCycle = const Value.absent(),
+    this.lastSettledAt = const Value.absent(),
     this.isActive = const Value.absent(),
     this.syncedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1108,6 +1257,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Expression<String>? type,
     Expression<double>? creditLimit,
     Expression<double>? outstandingBalance,
+    Expression<String>? settlementCycle,
+    Expression<DateTime>? lastSettledAt,
     Expression<bool>? isActive,
     Expression<DateTime>? syncedAt,
     Expression<int>? rowid,
@@ -1118,6 +1269,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       if (type != null) 'type': type,
       if (creditLimit != null) 'credit_limit': creditLimit,
       if (outstandingBalance != null) 'outstanding_balance': outstandingBalance,
+      if (settlementCycle != null) 'settlement_cycle': settlementCycle,
+      if (lastSettledAt != null) 'last_settled_at': lastSettledAt,
       if (isActive != null) 'is_active': isActive,
       if (syncedAt != null) 'synced_at': syncedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1130,6 +1283,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     Value<String>? type,
     Value<double>? creditLimit,
     Value<double>? outstandingBalance,
+    Value<String?>? settlementCycle,
+    Value<DateTime?>? lastSettledAt,
     Value<bool>? isActive,
     Value<DateTime?>? syncedAt,
     Value<int>? rowid,
@@ -1140,6 +1295,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
       type: type ?? this.type,
       creditLimit: creditLimit ?? this.creditLimit,
       outstandingBalance: outstandingBalance ?? this.outstandingBalance,
+      settlementCycle: settlementCycle ?? this.settlementCycle,
+      lastSettledAt: lastSettledAt ?? this.lastSettledAt,
       isActive: isActive ?? this.isActive,
       syncedAt: syncedAt ?? this.syncedAt,
       rowid: rowid ?? this.rowid,
@@ -1164,6 +1321,12 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
     if (outstandingBalance.present) {
       map['outstanding_balance'] = Variable<double>(outstandingBalance.value);
     }
+    if (settlementCycle.present) {
+      map['settlement_cycle'] = Variable<String>(settlementCycle.value);
+    }
+    if (lastSettledAt.present) {
+      map['last_settled_at'] = Variable<DateTime>(lastSettledAt.value);
+    }
     if (isActive.present) {
       map['is_active'] = Variable<bool>(isActive.value);
     }
@@ -1184,6 +1347,8 @@ class CustomersCompanion extends UpdateCompanion<Customer> {
           ..write('type: $type, ')
           ..write('creditLimit: $creditLimit, ')
           ..write('outstandingBalance: $outstandingBalance, ')
+          ..write('settlementCycle: $settlementCycle, ')
+          ..write('lastSettledAt: $lastSettledAt, ')
           ..write('isActive: $isActive, ')
           ..write('syncedAt: $syncedAt, ')
           ..write('rowid: $rowid')
@@ -1982,11 +2147,11 @@ class $PendingInvoiceItemsTable extends PendingInvoiceItems
     'quantity',
   );
   @override
-  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+  late final GeneratedColumn<double> quantity = GeneratedColumn<double>(
     'quantity',
     aliasedName,
     false,
-    type: DriftSqlType.int,
+    type: DriftSqlType.double,
     requiredDuringInsert: true,
   );
   static const VerificationMeta _unitPriceMeta = const VerificationMeta(
@@ -2126,7 +2291,7 @@ class $PendingInvoiceItemsTable extends PendingInvoiceItems
         data['${effectivePrefix}part_name'],
       )!,
       quantity: attachedDatabase.typeMapping.read(
-        DriftSqlType.int,
+        DriftSqlType.double,
         data['${effectivePrefix}quantity'],
       )!,
       unitPrice: attachedDatabase.typeMapping.read(
@@ -2153,7 +2318,7 @@ class PendingInvoiceItem extends DataClass
   final String partId;
   final String partCode;
   final String partName;
-  final int quantity;
+  final double quantity;
   final double unitPrice;
   final double lineTotal;
   const PendingInvoiceItem({
@@ -2174,7 +2339,7 @@ class PendingInvoiceItem extends DataClass
     map['part_id'] = Variable<String>(partId);
     map['part_code'] = Variable<String>(partCode);
     map['part_name'] = Variable<String>(partName);
-    map['quantity'] = Variable<int>(quantity);
+    map['quantity'] = Variable<double>(quantity);
     map['unit_price'] = Variable<double>(unitPrice);
     map['line_total'] = Variable<double>(lineTotal);
     return map;
@@ -2204,7 +2369,7 @@ class PendingInvoiceItem extends DataClass
       partId: serializer.fromJson<String>(json['partId']),
       partCode: serializer.fromJson<String>(json['partCode']),
       partName: serializer.fromJson<String>(json['partName']),
-      quantity: serializer.fromJson<int>(json['quantity']),
+      quantity: serializer.fromJson<double>(json['quantity']),
       unitPrice: serializer.fromJson<double>(json['unitPrice']),
       lineTotal: serializer.fromJson<double>(json['lineTotal']),
     );
@@ -2218,7 +2383,7 @@ class PendingInvoiceItem extends DataClass
       'partId': serializer.toJson<String>(partId),
       'partCode': serializer.toJson<String>(partCode),
       'partName': serializer.toJson<String>(partName),
-      'quantity': serializer.toJson<int>(quantity),
+      'quantity': serializer.toJson<double>(quantity),
       'unitPrice': serializer.toJson<double>(unitPrice),
       'lineTotal': serializer.toJson<double>(lineTotal),
     };
@@ -2230,7 +2395,7 @@ class PendingInvoiceItem extends DataClass
     String? partId,
     String? partCode,
     String? partName,
-    int? quantity,
+    double? quantity,
     double? unitPrice,
     double? lineTotal,
   }) => PendingInvoiceItem(
@@ -2304,7 +2469,7 @@ class PendingInvoiceItemsCompanion extends UpdateCompanion<PendingInvoiceItem> {
   final Value<String> partId;
   final Value<String> partCode;
   final Value<String> partName;
-  final Value<int> quantity;
+  final Value<double> quantity;
   final Value<double> unitPrice;
   final Value<double> lineTotal;
   const PendingInvoiceItemsCompanion({
@@ -2323,7 +2488,7 @@ class PendingInvoiceItemsCompanion extends UpdateCompanion<PendingInvoiceItem> {
     required String partId,
     required String partCode,
     required String partName,
-    required int quantity,
+    required double quantity,
     required double unitPrice,
     required double lineTotal,
   }) : localInvoiceId = Value(localInvoiceId),
@@ -2339,7 +2504,7 @@ class PendingInvoiceItemsCompanion extends UpdateCompanion<PendingInvoiceItem> {
     Expression<String>? partId,
     Expression<String>? partCode,
     Expression<String>? partName,
-    Expression<int>? quantity,
+    Expression<double>? quantity,
     Expression<double>? unitPrice,
     Expression<double>? lineTotal,
   }) {
@@ -2361,7 +2526,7 @@ class PendingInvoiceItemsCompanion extends UpdateCompanion<PendingInvoiceItem> {
     Value<String>? partId,
     Value<String>? partCode,
     Value<String>? partName,
-    Value<int>? quantity,
+    Value<double>? quantity,
     Value<double>? unitPrice,
     Value<double>? lineTotal,
   }) {
@@ -2396,7 +2561,7 @@ class PendingInvoiceItemsCompanion extends UpdateCompanion<PendingInvoiceItem> {
       map['part_name'] = Variable<String>(partName.value);
     }
     if (quantity.present) {
-      map['quantity'] = Variable<int>(quantity.value);
+      map['quantity'] = Variable<double>(quantity.value);
     }
     if (unitPrice.present) {
       map['unit_price'] = Variable<double>(unitPrice.value);
@@ -2661,6 +2826,7 @@ typedef $$PartsTableCreateCompanionBuilder =
       required String id,
       required String code,
       required String name,
+      Value<String?> unit,
       required double sellPrice,
       Value<String?> imageUrl,
       Value<bool> isActive,
@@ -2672,6 +2838,7 @@ typedef $$PartsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> code,
       Value<String> name,
+      Value<String?> unit,
       Value<double> sellPrice,
       Value<String?> imageUrl,
       Value<bool> isActive,
@@ -2699,6 +2866,11 @@ class $$PartsTableFilterComposer extends Composer<_$AppDatabase, $PartsTable> {
 
   ColumnFilters<String> get name => $composableBuilder(
     column: $table.name,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unit => $composableBuilder(
+    column: $table.unit,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2747,6 +2919,11 @@ class $$PartsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get unit => $composableBuilder(
+    column: $table.unit,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<double> get sellPrice => $composableBuilder(
     column: $table.sellPrice,
     builder: (column) => ColumnOrderings(column),
@@ -2785,6 +2962,9 @@ class $$PartsTableAnnotationComposer
 
   GeneratedColumn<String> get name =>
       $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get unit =>
+      $composableBuilder(column: $table.unit, builder: (column) => column);
 
   GeneratedColumn<double> get sellPrice =>
       $composableBuilder(column: $table.sellPrice, builder: (column) => column);
@@ -2830,6 +3010,7 @@ class $$PartsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> code = const Value.absent(),
                 Value<String> name = const Value.absent(),
+                Value<String?> unit = const Value.absent(),
                 Value<double> sellPrice = const Value.absent(),
                 Value<String?> imageUrl = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
@@ -2839,6 +3020,7 @@ class $$PartsTableTableManager
                 id: id,
                 code: code,
                 name: name,
+                unit: unit,
                 sellPrice: sellPrice,
                 imageUrl: imageUrl,
                 isActive: isActive,
@@ -2850,6 +3032,7 @@ class $$PartsTableTableManager
                 required String id,
                 required String code,
                 required String name,
+                Value<String?> unit = const Value.absent(),
                 required double sellPrice,
                 Value<String?> imageUrl = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
@@ -2859,6 +3042,7 @@ class $$PartsTableTableManager
                 id: id,
                 code: code,
                 name: name,
+                unit: unit,
                 sellPrice: sellPrice,
                 imageUrl: imageUrl,
                 isActive: isActive,
@@ -2891,14 +3075,14 @@ typedef $$StockRowsTableCreateCompanionBuilder =
     StockRowsCompanion Function({
       required String partId,
       required String branchId,
-      required int quantity,
+      required double quantity,
       Value<int> rowid,
     });
 typedef $$StockRowsTableUpdateCompanionBuilder =
     StockRowsCompanion Function({
       Value<String> partId,
       Value<String> branchId,
-      Value<int> quantity,
+      Value<double> quantity,
       Value<int> rowid,
     });
 
@@ -2921,7 +3105,7 @@ class $$StockRowsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get quantity => $composableBuilder(
+  ColumnFilters<double> get quantity => $composableBuilder(
     column: $table.quantity,
     builder: (column) => ColumnFilters(column),
   );
@@ -2946,7 +3130,7 @@ class $$StockRowsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get quantity => $composableBuilder(
+  ColumnOrderings<double> get quantity => $composableBuilder(
     column: $table.quantity,
     builder: (column) => ColumnOrderings(column),
   );
@@ -2967,7 +3151,7 @@ class $$StockRowsTableAnnotationComposer
   GeneratedColumn<String> get branchId =>
       $composableBuilder(column: $table.branchId, builder: (column) => column);
 
-  GeneratedColumn<int> get quantity =>
+  GeneratedColumn<double> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 }
 
@@ -3001,7 +3185,7 @@ class $$StockRowsTableTableManager
               ({
                 Value<String> partId = const Value.absent(),
                 Value<String> branchId = const Value.absent(),
-                Value<int> quantity = const Value.absent(),
+                Value<double> quantity = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => StockRowsCompanion(
                 partId: partId,
@@ -3013,7 +3197,7 @@ class $$StockRowsTableTableManager
               ({
                 required String partId,
                 required String branchId,
-                required int quantity,
+                required double quantity,
                 Value<int> rowid = const Value.absent(),
               }) => StockRowsCompanion.insert(
                 partId: partId,
@@ -3050,6 +3234,8 @@ typedef $$CustomersTableCreateCompanionBuilder =
       required String type,
       Value<double> creditLimit,
       Value<double> outstandingBalance,
+      Value<String?> settlementCycle,
+      Value<DateTime?> lastSettledAt,
       Value<bool> isActive,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
@@ -3061,6 +3247,8 @@ typedef $$CustomersTableUpdateCompanionBuilder =
       Value<String> type,
       Value<double> creditLimit,
       Value<double> outstandingBalance,
+      Value<String?> settlementCycle,
+      Value<DateTime?> lastSettledAt,
       Value<bool> isActive,
       Value<DateTime?> syncedAt,
       Value<int> rowid,
@@ -3097,6 +3285,16 @@ class $$CustomersTableFilterComposer
 
   ColumnFilters<double> get outstandingBalance => $composableBuilder(
     column: $table.outstandingBalance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get settlementCycle => $composableBuilder(
+    column: $table.settlementCycle,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get lastSettledAt => $composableBuilder(
+    column: $table.lastSettledAt,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -3145,6 +3343,16 @@ class $$CustomersTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get settlementCycle => $composableBuilder(
+    column: $table.settlementCycle,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get lastSettledAt => $composableBuilder(
+    column: $table.lastSettledAt,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isActive => $composableBuilder(
     column: $table.isActive,
     builder: (column) => ColumnOrderings(column),
@@ -3181,6 +3389,16 @@ class $$CustomersTableAnnotationComposer
 
   GeneratedColumn<double> get outstandingBalance => $composableBuilder(
     column: $table.outstandingBalance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get settlementCycle => $composableBuilder(
+    column: $table.settlementCycle,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get lastSettledAt => $composableBuilder(
+    column: $table.lastSettledAt,
     builder: (column) => column,
   );
 
@@ -3224,6 +3442,8 @@ class $$CustomersTableTableManager
                 Value<String> type = const Value.absent(),
                 Value<double> creditLimit = const Value.absent(),
                 Value<double> outstandingBalance = const Value.absent(),
+                Value<String?> settlementCycle = const Value.absent(),
+                Value<DateTime?> lastSettledAt = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3233,6 +3453,8 @@ class $$CustomersTableTableManager
                 type: type,
                 creditLimit: creditLimit,
                 outstandingBalance: outstandingBalance,
+                settlementCycle: settlementCycle,
+                lastSettledAt: lastSettledAt,
                 isActive: isActive,
                 syncedAt: syncedAt,
                 rowid: rowid,
@@ -3244,6 +3466,8 @@ class $$CustomersTableTableManager
                 required String type,
                 Value<double> creditLimit = const Value.absent(),
                 Value<double> outstandingBalance = const Value.absent(),
+                Value<String?> settlementCycle = const Value.absent(),
+                Value<DateTime?> lastSettledAt = const Value.absent(),
                 Value<bool> isActive = const Value.absent(),
                 Value<DateTime?> syncedAt = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
@@ -3253,6 +3477,8 @@ class $$CustomersTableTableManager
                 type: type,
                 creditLimit: creditLimit,
                 outstandingBalance: outstandingBalance,
+                settlementCycle: settlementCycle,
+                lastSettledAt: lastSettledAt,
                 isActive: isActive,
                 syncedAt: syncedAt,
                 rowid: rowid,
@@ -3633,7 +3859,7 @@ typedef $$PendingInvoiceItemsTableCreateCompanionBuilder =
       required String partId,
       required String partCode,
       required String partName,
-      required int quantity,
+      required double quantity,
       required double unitPrice,
       required double lineTotal,
     });
@@ -3644,7 +3870,7 @@ typedef $$PendingInvoiceItemsTableUpdateCompanionBuilder =
       Value<String> partId,
       Value<String> partCode,
       Value<String> partName,
-      Value<int> quantity,
+      Value<double> quantity,
       Value<double> unitPrice,
       Value<double> lineTotal,
     });
@@ -3683,7 +3909,7 @@ class $$PendingInvoiceItemsTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<int> get quantity => $composableBuilder(
+  ColumnFilters<double> get quantity => $composableBuilder(
     column: $table.quantity,
     builder: (column) => ColumnFilters(column),
   );
@@ -3733,7 +3959,7 @@ class $$PendingInvoiceItemsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<int> get quantity => $composableBuilder(
+  ColumnOrderings<double> get quantity => $composableBuilder(
     column: $table.quantity,
     builder: (column) => ColumnOrderings(column),
   );
@@ -3775,7 +4001,7 @@ class $$PendingInvoiceItemsTableAnnotationComposer
   GeneratedColumn<String> get partName =>
       $composableBuilder(column: $table.partName, builder: (column) => column);
 
-  GeneratedColumn<int> get quantity =>
+  GeneratedColumn<double> get quantity =>
       $composableBuilder(column: $table.quantity, builder: (column) => column);
 
   GeneratedColumn<double> get unitPrice =>
@@ -3833,7 +4059,7 @@ class $$PendingInvoiceItemsTableTableManager
                 Value<String> partId = const Value.absent(),
                 Value<String> partCode = const Value.absent(),
                 Value<String> partName = const Value.absent(),
-                Value<int> quantity = const Value.absent(),
+                Value<double> quantity = const Value.absent(),
                 Value<double> unitPrice = const Value.absent(),
                 Value<double> lineTotal = const Value.absent(),
               }) => PendingInvoiceItemsCompanion(
@@ -3853,7 +4079,7 @@ class $$PendingInvoiceItemsTableTableManager
                 required String partId,
                 required String partCode,
                 required String partName,
-                required int quantity,
+                required double quantity,
                 required double unitPrice,
                 required double lineTotal,
               }) => PendingInvoiceItemsCompanion.insert(

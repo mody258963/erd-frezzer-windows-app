@@ -69,17 +69,17 @@ class DashboardCubit extends Cubit<DashboardState> {
     emit(const DashboardState(loading: true));
     try {
       final core = await Future.wait([
-        _repo.summary(),
-        _repo.sales(),
-        _repo.activity(),
-        _repo.inventory(),
-        _repo.receivables(),
-        _repo.payables(),
+        _repo.summary(branchId: branchId),
+        _repo.sales(branchId: branchId),
+        _repo.activity(branchId: branchId),
+        _repo.inventory(branchId: branchId),
+        _repo.receivables(branchId: branchId),
+        _repo.payables(branchId: branchId),
       ]);
 
       List<Map<String, dynamic>> salesReport = [];
       try {
-        salesReport = await _repo.productSales();
+        salesReport = await _repo.productSales(branchId: branchId);
       } catch (_) {
         // Product breakdown is optional if reports endpoint is unavailable.
       }

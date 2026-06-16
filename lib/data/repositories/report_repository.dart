@@ -22,36 +22,70 @@ class ReportRepository {
     return parseList(r.data, (j) => j);
   }
 
-  Future<List<Map<String, dynamic>>> inventory() async {
-    final r = await _dio.get<dynamic>('/reports/inventory');
+  Future<List<Map<String, dynamic>>> inventory({String? branchId}) async {
+    final r = await _dio.get<dynamic>(
+      '/reports/inventory',
+      queryParameters: {
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
+      },
+    );
     return parseList(r.data, (j) => j);
   }
 
-  Future<List<Map<String, dynamic>>> customers() async {
-    final r = await _dio.get<dynamic>('/reports/customers');
+  Future<List<Map<String, dynamic>>> customers({String? branchId}) async {
+    final r = await _dio.get<dynamic>(
+      '/reports/customers',
+      queryParameters: {
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
+      },
+    );
     return parseList(r.data, (j) => j);
   }
 
-  Future<List<Map<String, dynamic>>> suppliers() async {
-    final r = await _dio.get<dynamic>('/reports/suppliers');
+  Future<List<Map<String, dynamic>>> suppliers({String? branchId}) async {
+    final r = await _dio.get<dynamic>(
+      '/reports/suppliers',
+      queryParameters: {
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
+      },
+    );
     return parseList(r.data, (j) => j);
   }
 
   Future<Map<String, dynamic>> returns({
     String? from,
     String? to,
+    String? branchId,
   }) async {
     final r = await _dio.get<dynamic>(
       '/reports/returns',
       queryParameters: {
         if (from != null) 'from': from,
         if (to != null) 'to': to,
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
       },
     );
     return parseObject(r.data);
   }
 
   /// `GET /reports/parts-sales-chart` — top parts by month for charts.
+  /// P&amp;L for a date range (`GET /reports/financial`).
+  Future<Map<String, dynamic>> financial({
+    String? from,
+    String? to,
+    String? branchId,
+  }) async {
+    final r = await _dio.get<dynamic>(
+      '/reports/financial',
+      queryParameters: {
+        if (from != null) 'from': from,
+        if (to != null) 'to': to,
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
+      },
+    );
+    return parseObject(r.data);
+  }
+
   Future<Map<String, dynamic>> partsSalesChart({
     int? year,
     int limit = 10,

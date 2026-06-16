@@ -1,18 +1,20 @@
 import 'package:data_table_2/data_table_2.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/auth/auth_cubit.dart';
+import '../../core/branch/branch_filter_scope.dart';
+import '../../core/events/app_refresh_bus.dart';
 import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/l10n/report_labels.dart';
+import '../../core/printer/printer_print_helper.dart';
 import '../../core/theme/app_colors.dart';
-import '../../data/models/branch_model.dart';
+import '../../core/utils/business_week.dart';
+import '../../data/models/invoice_model.dart';
+import '../../data/repositories/invoice_repository.dart';
 import '../../data/repositories/report_repository.dart';
 import '../../di/injection.dart';
 import '../../router/route_paths.dart';
-import '../shared/branch_dropdown.dart';
 import '../shared/loading_error.dart';
 import '../shared/page_header.dart';
 
@@ -27,27 +29,37 @@ class ReportDetailScreen extends StatefulWidget {
 
 class _ReportDetailScreenState extends State<ReportDetailScreen> {
   List<Map<String, dynamic>>? _rows;
+  List<Map<String, dynamic>>? _rawRows;
   Map<String, dynamic>? _summary;
   String? _error;
   bool _loading = false;
   bool _loaded = false;
+  bool _printing = false;
 
   late DateTimeRange _range;
-  String? _branchId;
-  List<BranchModel> _branches = [];
 
   @override
   void initState() {
     super.initState();
     final now = DateTime.now();
-    _range = DateTimeRange(
-      start: DateTime(now.year, now.month, 1),
-      end: now,
-    );
-    _branchId = context.read<AuthCubit>().state.user?.branchId;
-    if (_isDateFiltered) {
-      _loadBranches();
-    }
+    _range = widget.kind == ReportKind.sales
+        ? BusinessWeek.rangeFor(now)
+        : DateTimeRange(
+            start: DateTime(now.year, now.month, 1),
+            end: now,
+          );
+    getIt<AppRefreshBus>().addListener(_onAppRefresh);
+  }
+
+  @override
+  void dispose() {
+    getIt<AppRefreshBus>().removeListener(_onAppRefresh);
+    super.dispose();
+  }
+
+  void _onAppRefresh(AppRefreshKind kind) {
+    if (!mounted || kind != AppRefreshKind.branchFilter || !_loaded) return;
+    _load();
   }
 
   bool get _isDateFiltered =>
@@ -62,12 +74,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ReportKind.suppliers => context.l10n.suppliersReportTitle,
         ReportKind.returns => context.l10n.returnsReportTitle,
       };
-
-  Future<void> _loadBranches() async {
-    try {
-      _branches = await loadActiveBranches();
-    } catch (_) {}
-  }
 
   String _isoDate(DateTime d) {
     final y = d.year.toString().padLeft(4, '0');
@@ -85,15 +91,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       final repo = getIt<ReportRepository>();
       final from = _isoDate(_range.start);
       final to = _isoDate(_range.end);
+      final branchId = apiBranchIdFromContext(context);
 
       if (_isReturnsSummary) {
-        final data = await repo.returns(from: from, to: to);
-        setState(() {
-          _summary = data;
-          _rows = null;
-          _loading = false;
-          _loaded = true;
-        });
+        final data = await repo.returns(
+          from: from,
+          to: to,
+          branchId: branchId,
+        );
+      setState(() {
+        _summary = data;
+        _rows = null;
+        _rawRows = null;
+        _loading = false;
+        _loaded = true;
+      });
         return;
       }
 
@@ -101,15 +113,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ReportKind.sales => await repo.sales(
             from: from,
             to: to,
-            branchId: _branchId,
+            branchId: branchId,
           ),
-        ReportKind.inventory => await repo.inventory(),
-        ReportKind.customers => await repo.customers(),
-        ReportKind.suppliers => await repo.suppliers(),
+        ReportKind.inventory => await repo.inventory(branchId: branchId),
+        ReportKind.customers => await repo.customers(branchId: branchId),
+        ReportKind.suppliers => await repo.suppliers(branchId: branchId),
         ReportKind.returns => [],
       };
 
       setState(() {
+        _rawRows = raw;
         _rows = flattenReportRows(context, widget.kind, raw);
         _summary = _computeTotals(raw);
         _loading = false;
@@ -153,6 +166,54 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
     if (picked != null) {
       setState(() => _range = picked);
+    }
+  }
+
+  void _setThisWeekRange() {
+    setState(() => _range = BusinessWeek.rangeFor(DateTime.now()));
+  }
+
+  Future<void> _printSalesReport() async {
+    final l10n = context.l10n;
+    final raw = _rawRows ?? [];
+    if (raw.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.noData)),
+      );
+      return;
+    }
+
+    setState(() => _printing = true);
+    try {
+      final repo = getIt<InvoiceRepository>();
+      final invoices = <InvoiceModel>[];
+      for (final row in raw) {
+        final id = row['id'] as String?;
+        if (id == null || id.isEmpty) continue;
+        invoices.add(await repo.get(id));
+      }
+      if (invoices.isEmpty) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.noData)),
+        );
+        return;
+      }
+      await printInvoicesBatch(invoices);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.weekInvoicesPrinted(invoices.length)),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _printing = false);
     }
   }
 
@@ -205,16 +266,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                             ),
                           ),
                         ),
-                        if (widget.kind == ReportKind.sales &&
-                            _branches.isNotEmpty)
-                          SizedBox(
-                            width: 260,
-                            child: BranchDropdown(
-                              branches: _branches,
-                              value: _branchId,
-                              label: l10n.branch,
-                              onChanged: (v) => setState(() => _branchId = v),
-                            ),
+                        if (widget.kind == ReportKind.sales)
+                          OutlinedButton.icon(
+                            onPressed: _setThisWeekRange,
+                            icon: const Icon(Icons.today_outlined, size: 18),
+                            label: Text(l10n.reportThisWeek),
                           ),
                       ],
                     ),
@@ -231,6 +287,22 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                         : const Icon(Icons.analytics_outlined),
                     label: Text(l10n.runReport),
                   ),
+                  if (widget.kind == ReportKind.sales && _loaded) ...[
+                    const SizedBox(height: 8),
+                    OutlinedButton.icon(
+                      onPressed: _printing || (_rawRows?.isEmpty ?? true)
+                          ? null
+                          : _printSalesReport,
+                      icon: _printing
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.print_outlined),
+                      label: Text(l10n.printWeekInvoices),
+                    ),
+                  ],
                 ],
               ),
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/printer/printer_print_helper.dart';
 import '../../core/printer/services/invoice_printer_service.dart';
@@ -17,11 +18,15 @@ class ReceiptScreen extends StatefulWidget {
   const ReceiptScreen({
     required this.id,
     this.offline = false,
+    this.amountPaid,
+    this.changeDue,
     super.key,
   });
 
   final String id;
   final bool offline;
+  final double? amountPaid;
+  final double? changeDue;
 
   @override
   State<ReceiptScreen> createState() => _ReceiptScreenState();
@@ -66,6 +71,10 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
             if (inv.discount > 0) 'Discount: -${inv.discount}',
             'Total: ${inv.total}',
             'Payment: ${inv.paymentType}',
+            if (widget.amountPaid != null)
+              '${l10n.amountReceived}: ${formatMoney(context, widget.amountPaid)}',
+            if (widget.changeDue != null && widget.changeDue! > 0)
+              '${l10n.changeDue}: ${formatMoney(context, widget.changeDue)}',
             '---',
             ...items.map(
               (i) =>
@@ -84,6 +93,7 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                     quantity: i.quantity,
                     unitPrice: i.unitPrice,
                     partCode: i.partCode,
+                    partName: i.partName,
                     lineTotal: i.lineTotal,
                   ),
                 )
@@ -93,6 +103,8 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
             discount: inv.discount,
             paymentMethod: inv.paymentType,
             customerName: customerName,
+            amountPaid: widget.amountPaid,
+            changeDue: widget.changeDue,
           );
           _loading = false;
         });
@@ -107,13 +119,20 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
             if (inv.discount > 0) 'Discount: -${inv.discount}',
             'Total: ${inv.total}',
             'Payment: ${inv.paymentType}',
+            if (widget.amountPaid != null)
+              '${l10n.amountReceived}: ${formatMoney(context, widget.amountPaid)}',
+            if (widget.changeDue != null && widget.changeDue! > 0)
+              '${l10n.changeDue}: ${formatMoney(context, widget.changeDue)}',
             '---',
             ...inv.items.map(
               (i) =>
                   '${i.partCode ?? i.partId} x${i.quantity} = ${i.lineTotal ?? ''}',
             ),
           ];
-          _printData = InvoicePrintData.fromModel(inv);
+          _printData = InvoicePrintData.fromModel(inv).copyWith(
+            amountPaid: widget.amountPaid,
+            changeDue: widget.changeDue,
+          );
           _loading = false;
         });
       }
@@ -196,6 +215,40 @@ class _ReceiptScreenState extends State<ReceiptScreen> {
                             style: Theme.of(context).textTheme.headlineSmall,
                           ),
                           const SizedBox(height: 16),
+                          if (widget.changeDue != null &&
+                              widget.changeDue! > 0) ...[
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(16),
+                              margin: const EdgeInsets.only(bottom: 16),
+                              decoration: BoxDecoration(
+                                color: Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.green.shade300),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    l10n.changeDue,
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                  Text(
+                                    formatMoney(context, widget.changeDue),
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .headlineSmall
+                                        ?.copyWith(
+                                          color: Colors.green.shade800,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           ..._lines.map(
                             (l) => Padding(
                               padding: const EdgeInsets.symmetric(vertical: 2),

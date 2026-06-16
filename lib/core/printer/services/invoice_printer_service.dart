@@ -1,6 +1,8 @@
 import 'package:logging/logging.dart';
 
 import '../../../data/models/invoice_model.dart';
+import '../../../data/models/invoice_receipt_model.dart';
+import '../models/daily_sales_report.dart';
 import '../models/printer_settings.dart';
 import '../repository/printer_repository.dart';
 import 'esc_pos_receipt_builder.dart';
@@ -16,6 +18,9 @@ class InvoicePrintData {
     this.discount = 0,
     this.paymentMethod,
     this.customerName,
+    this.branchName,
+    this.amountPaid,
+    this.changeDue,
   });
 
   final String invoiceNumber;
@@ -26,6 +31,11 @@ class InvoicePrintData {
   final double discount;
   final String? paymentMethod;
   final String? customerName;
+  final String? branchName;
+  final double? amountPaid;
+  final double? changeDue;
+
+  bool get isCash => (paymentMethod ?? '').toLowerCase() == 'cash';
 
   factory InvoicePrintData.fromModel(InvoiceModel model) {
     var subtotal = model.subtotal;
@@ -36,7 +46,7 @@ class InvoicePrintData {
       );
     }
     return InvoicePrintData(
-      invoiceNumber: model.id.length > 8 ? model.id.substring(0, 8) : model.id,
+      invoiceNumber: model.displayNumber,
       invoiceDate: model.createdAt ?? DateTime.now().toIso8601String().split('T').first,
       items: model.items,
       subtotal: subtotal,
@@ -44,6 +54,38 @@ class InvoicePrintData {
       discount: model.discount,
       paymentMethod: model.paymentType,
       customerName: model.customerName,
+      branchName: model.branchName,
+      amountPaid: (model.paymentType.toLowerCase() == 'cash')
+          ? model.amountPaid
+          : null,
+    );
+  }
+
+  InvoicePrintData copyWith({
+    String? invoiceNumber,
+    String? invoiceDate,
+    List<InvoiceItemModel>? items,
+    double? subtotal,
+    double? total,
+    double? discount,
+    String? paymentMethod,
+    String? customerName,
+    String? branchName,
+    double? amountPaid,
+    double? changeDue,
+  }) {
+    return InvoicePrintData(
+      invoiceNumber: invoiceNumber ?? this.invoiceNumber,
+      invoiceDate: invoiceDate ?? this.invoiceDate,
+      items: items ?? this.items,
+      subtotal: subtotal ?? this.subtotal,
+      total: total ?? this.total,
+      discount: discount ?? this.discount,
+      paymentMethod: paymentMethod ?? this.paymentMethod,
+      customerName: customerName ?? this.customerName,
+      branchName: branchName ?? this.branchName,
+      amountPaid: amountPaid ?? this.amountPaid,
+      changeDue: changeDue ?? this.changeDue,
     );
   }
 }
@@ -76,10 +118,66 @@ class InvoicePrinterService {
       discount: data.discount,
       paymentMethod: data.paymentMethod,
       customerName: data.customerName,
+      branchName: data.branchName,
+      amountPaid: data.amountPaid,
+      changeDue: data.changeDue,
     );
     await _printerService.printRaw(bytes);
   }
 
   Future<void> printInvoiceModel(InvoiceModel model) =>
       printInvoice(InvoicePrintData.fromModel(model));
+
+  /// One print job — each invoice is a separate cut on the roll.
+  Future<void> printInvoicesBatch(List<InvoicePrintData> invoices) async {
+    if (invoices.isEmpty) return;
+    _log.info('Batch printing ${invoices.length} invoices');
+    final bytes = <int>[];
+    for (final data in invoices) {
+      bytes.addAll(
+        await _builder.buildInvoice(
+          settings: settings,
+          invoiceNumber: data.invoiceNumber,
+          invoiceDate: data.invoiceDate,
+          items: data.items,
+          subtotal: data.subtotal,
+          total: data.total,
+          discount: data.discount,
+          paymentMethod: data.paymentMethod,
+          customerName: data.customerName,
+          branchName: data.branchName,
+          amountPaid: data.amountPaid,
+          changeDue: data.changeDue,
+        ),
+      );
+    }
+    await _printerService.printRaw(bytes);
+  }
+
+  Future<void> printInvoiceModelsBatch(List<InvoiceModel> models) =>
+      printInvoicesBatch(
+        models.map(InvoicePrintData.fromModel).toList(),
+      );
+
+  Future<void> printReceiptStatement(InvoiceReceiptModel receipt) async {
+    final num = receipt.invoice.invoiceNumber ?? 'receipt';
+    _log.info('Printing receipt statement $num');
+    final bytes = await _builder.buildInvoiceReceiptStatement(
+      settings: settings,
+      receipt: receipt,
+    );
+    await _printerService.printRaw(bytes);
+  }
+
+  Future<void> printDailySalesReport(DailySalesReport report) async {
+    _log.info(
+      'Printing daily sales report ${report.date} '
+      '(${report.invoiceCount} invoices)',
+    );
+    final bytes = await _builder.buildDailySalesReport(
+      settings: settings,
+      report: report,
+    );
+    await _printerService.printRaw(bytes);
+  }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/assets/app_assets.dart';
+import 'image_lightbox.dart';
 
 /// App brand mark from [AppAssets.logo].
 class AppLogo extends StatelessWidget {
@@ -8,10 +9,12 @@ class AppLogo extends StatelessWidget {
     super.key,
     this.size = 40,
     this.circular = true,
+    this.enableLightbox = true,
   });
 
   final double size;
   final bool circular;
+  final bool enableLightbox;
 
   @override
   Widget build(BuildContext context) {
@@ -28,10 +31,15 @@ class AppLogo extends StatelessWidget {
       ),
     );
 
-    if (!circular) return image;
+    final clipped = circular
+        ? ClipOval(child: SizedBox(width: size, height: size, child: image))
+        : image;
 
-    return ClipOval(
-      child: SizedBox(width: size, height: size, child: image),
+    if (!enableLightbox) return clipped;
+
+    return LightboxTapTarget(
+      onTap: () => showImageLightbox(context, assetPath: AppAssets.logo),
+      child: clipped,
     );
   }
 }

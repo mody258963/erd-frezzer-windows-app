@@ -6,6 +6,9 @@ import '../../core/auth/auth_cubit.dart';
 import '../../core/auth/login_bloc.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/catalog/catalog_branch.dart';
+import '../../di/injection.dart';
+import '../../core/catalog/catalog_refresh_scheduler.dart';
 import '../../data/repositories/catalog_sync_repository.dart';
 import '../../di/injection.dart';
 import '../../router/route_paths.dart';
@@ -104,12 +107,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         listener: (context, state) async {
                           if (state.status == LoginStatus.success) {
                             final user = getIt<AuthCubit>().state.user;
-                            if (user?.branchId != null) {
+                            final branchId = await resolveCatalogBranchId(user);
+                            if (branchId != null) {
                               try {
                                 await getIt<CatalogSyncRepository>()
-                                    .refresh(user!.branchId!);
+                                    .refresh(branchId);
                               } catch (_) {}
                             }
+                            getIt<CatalogRefreshScheduler>().start();
                             if (context.mounted) {
                               context.go(RoutePaths.dashboard);
                             }

@@ -13,6 +13,12 @@ class DailyProfitMetrics {
     this.invoiceCount = 0,
     this.estimated = false,
     this.period = ProfitPeriod.daily,
+    this.customerRefunds = 0,
+    this.grossRevenue = 0,
+    this.weeklyDiscount = 0,
+    this.weeklyGrossProfit = 0,
+    this.refundProfitImpact = 0,
+    this.reportedProfit,
   });
 
   final double sales;
@@ -20,8 +26,18 @@ class DailyProfitMetrics {
   final int invoiceCount;
   final bool estimated;
   final ProfitPeriod period;
+  final double customerRefunds;
+  final double grossRevenue;
+  final double weeklyDiscount;
+  final double weeklyGrossProfit;
+  final double refundProfitImpact;
+  /// `weekly_profit` from API when present.
+  final double? reportedProfit;
 
-  double get profit => sales - cost;
+  /// Net profit after returns — always from API when weekly summary exists.
+  double get profit =>
+      reportedProfit ??
+      (isWeekly ? weeklyGrossProfit - weeklyDiscount : sales - cost);
 
   double get marginPercent => sales > 0 ? (profit / sales) * 100 : 0;
 
@@ -33,10 +49,26 @@ DailyProfitMetrics? profitFromSummary(Map<String, dynamic> summary) {
   if (summary.containsKey('weekly_profit')) {
     final profit = _num(summary['weekly_profit']);
     final revenue = _num(summary['weekly_revenue']);
+    final refunds = _num(summary['weekly_customer_refunds']);
+    final netSales = _num(summary['weekly_net_sales']);
+    final discount = _num(summary['weekly_discount']);
+    final grossProfit = _num(summary['weekly_gross_profit']);
+    final refundImpact = _num(summary['weekly_customer_refund_profit_impact']);
+    final salesDisplay = netSales > 0
+        ? netSales
+        : (revenue - refunds).clamp(0.0, double.infinity);
     return DailyProfitMetrics(
-      sales: revenue,
-      cost: revenue > 0 ? (revenue - profit).clamp(0, double.infinity) : 0,
+      sales: salesDisplay > 0 ? salesDisplay : revenue,
+      cost: salesDisplay > 0
+          ? (salesDisplay - profit).clamp(0, double.infinity)
+          : 0,
       period: ProfitPeriod.weekly,
+      customerRefunds: refunds,
+      grossRevenue: revenue,
+      weeklyDiscount: discount,
+      weeklyGrossProfit: grossProfit,
+      refundProfitImpact: refundImpact,
+      reportedProfit: profit,
     );
   }
 

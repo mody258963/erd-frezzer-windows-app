@@ -15,6 +15,12 @@ class BranchRepository {
     return parseList(response.data, BranchModel.fromJson);
   }
 
+  /// Active branches for branch picker (`GET /branches/active`).
+  Future<List<BranchModel>> listActive() async {
+    final response = await _dio.get<dynamic>('/branches/active');
+    return parseList(response.data, BranchModel.fromJson);
+  }
+
   Future<BranchModel> get(String id) async {
     final response = await _dio.get<dynamic>('/branches/$id');
     return BranchModel.fromJson(parseObject(response.data));

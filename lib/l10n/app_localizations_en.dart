@@ -40,7 +40,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get offline => 'Offline';
 
   @override
-  String get offlineBanner => 'Offline — only new sales can be saved locally';
+  String get offlineBanner => 'Offline â€” only new sales can be saved locally';
 
   @override
   String get dismiss => 'Dismiss';
@@ -68,6 +68,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get navStock => 'Stock';
+
+  @override
+  String get navPartsStock => 'Parts & stock';
 
   @override
   String get navCustomers => 'Customers';
@@ -116,7 +119,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get dashboardSubtitle =>
-      'Your business at a glance — sales, stock, and money';
+      'Your business at a glance â€” sales, stock, and money';
 
   @override
   String get dashboardNeedsAttention => 'Needs attention';
@@ -182,8 +185,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activitySyncCompleted => 'Data sync completed';
 
   @override
+  String get activityOwnerCashOut => 'Owner cash out recorded';
+
+  @override
   String activityGeneric(Object action, Object entity) {
-    return '$action · $entity';
+    return '$action Â· $entity';
   }
 
   @override
@@ -283,13 +289,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get noRecentActivity => 'No recent activity';
 
   @override
-  String get loadingDashboard => 'Loading dashboard…';
+  String get loadingDashboard => 'Loading dashboardâ€¦';
 
   @override
-  String get posTitle => 'POS — New sale';
+  String get posTitle => 'POS â€” New sale';
 
   @override
   String get posSubtitle => 'Search parts or scan a barcode to add to cart';
+
+  @override
+  String get printDaySales => 'Print day sales';
+
+  @override
+  String get printDaySalesReport => 'Day sales report';
+
+  @override
+  String get noDaySales => 'No sales today to print';
+
+  @override
+  String get daySalesPrinted => 'Day sales report sent to printer';
 
   @override
   String get searchScanBarcode => 'Search / scan barcode';
@@ -316,6 +334,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get cartEmpty => 'Cart is empty';
 
   @override
+  String get removeFromCart => 'Remove item';
+
+  @override
   String get subtotal => 'Subtotal';
 
   @override
@@ -328,7 +349,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get completeSale => 'Complete sale';
 
   @override
-  String get processing => 'Processing…';
+  String get amountReceived => 'Amount received';
+
+  @override
+  String get changeDue => 'Change due';
+
+  @override
+  String get amountReceivedTooLow =>
+      'Amount received must be at least the invoice total';
+
+  @override
+  String get processing => 'Processingâ€¦';
 
   @override
   String get invalidLinePrice =>
@@ -350,7 +381,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiConnection => 'API connection';
 
   @override
-  String get apiHostHint => 'Host only — /api/v1 is appended automatically';
+  String get apiHostHint => 'Host only â€” /api/v1 is appended automatically';
 
   @override
   String get apiBaseUrl => 'API base URL';
@@ -398,6 +429,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get newCustomer => 'New customer';
 
   @override
+  String get customerBranchRequired =>
+      'Select a branch before adding a customer';
+
+  @override
   String get inventoryTitle => 'Inventory';
 
   @override
@@ -419,7 +454,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get printReceipt => 'Print receipt';
 
   @override
-  String get printing => 'Printing…';
+  String get printing => 'Printingâ€¦';
 
   @override
   String get printSuccess => 'Receipt sent to printer';
@@ -521,6 +556,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get suppliersTitle => 'Suppliers';
+
+  @override
+  String get suppliersSubtitle =>
+      'Suppliers registered in the selected branch only';
+
+  @override
+  String get supplierBranchRequired =>
+      'Select a branch before adding a supplier';
+
+  @override
+  String get supplierBranchPoHint => 'No suppliers in this branch yet';
 
   @override
   String get newSupplier => 'New supplier';
@@ -685,11 +731,362 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String customerRowSubtitle(Object type, Object balance) {
-    return '$type · $balance';
+    return '$type Â· $balance';
   }
 
   @override
   String get customerSaved => 'Customer saved';
+
+  @override
+  String get contactInfo => 'Contact';
+
+  @override
+  String get purchaseHistory => 'Purchase history';
+
+  @override
+  String get purchaseHistoryHint =>
+      'Parts this customer bought â€” when and at which branch.';
+
+  @override
+  String get noPurchaseHistory =>
+      'No purchases recorded for this customer yet.';
+
+  @override
+  String get totalPurchases => 'Total purchases';
+
+  @override
+  String get tapRowForInvoice => 'Tap a row to open the full invoice.';
+
+  @override
+  String get customerViewThisWeek => 'This week';
+
+  @override
+  String get customerViewHistory => 'Settled / history';
+
+  @override
+  String customerThisWeekHint(Object range) {
+    return 'Open work for $range â€” unsettled invoices only.';
+  }
+
+  @override
+  String get customerHistoryHint =>
+      'Settled invoices and purchases from earlier weeks.';
+
+  @override
+  String get customerOpenWork => 'This week\'s work';
+
+  @override
+  String get customerSettledHistory => 'Settled & history';
+
+  @override
+  String get customerSettledHistoryHint =>
+      'Invoices paid via settlement or from before this week.';
+
+  @override
+  String get customerNoOpenWorkThisWeek =>
+      'No open invoices this week â€” all settled or none sold yet.';
+
+  @override
+  String get customerNoSettledHistory => 'No settled or older invoices yet.';
+
+  @override
+  String customerWeekRange(Object from, Object to) {
+    return '$from â€“ $to';
+  }
+
+  @override
+  String get customerNoWeekInvoices => 'No invoices this week to print.';
+
+  @override
+  String get printWeekInvoices => 'Print all (one job)';
+
+  @override
+  String weekInvoicesPrinted(Object count) {
+    return 'Printed $count invoice(s)';
+  }
+
+  @override
+  String get settled => 'Settled';
+
+  @override
+  String get reportThisWeek => 'This week';
+
+  @override
+  String get collectPaymentTitle => 'Collect payment';
+
+  @override
+  String get collectPaymentConfirm => 'Collect';
+
+  @override
+  String get collectPaymentSuccess => 'Payment recorded';
+
+  @override
+  String get customerNoBalanceDue => 'No balance due';
+
+  @override
+  String customerPayAmountInvalid(Object max) {
+    return 'Amount must be between 0.01 and $max';
+  }
+
+  @override
+  String get customerPaymentHistory => 'Payment history';
+
+  @override
+  String get unpaidInvoicesTitle => 'Unpaid invoices';
+
+  @override
+  String get unpaidInvoicesHint =>
+      'Partial payments apply to oldest invoices first.';
+
+  @override
+  String invoiceBalanceSubtitle(Object paid, Object due) {
+    return 'Paid $paid Â· Due $due';
+  }
+
+  @override
+  String get refundProfitImpact => 'Return margin impact';
+
+  @override
+  String get linkToSupplier => 'Link to supplier';
+
+  @override
+  String get noLinkedSupplier => 'No linked supplier';
+
+  @override
+  String get linkedBalanceTitle => 'Net balance (linked)';
+
+  @override
+  String get linkedNotLinkedHint =>
+      'Link this customer to a supplier to see net balance and offset.';
+
+  @override
+  String linkedToSupplier(Object name) {
+    return 'Linked supplier: $name';
+  }
+
+  @override
+  String linkedToCustomer(Object name) {
+    return 'Linked customer: $name';
+  }
+
+  @override
+  String get linkedCustomerReceivable => 'They owe you';
+
+  @override
+  String get linkedSupplierPayable => 'You owe them';
+
+  @override
+  String get linkedNetBalance => 'Net balance';
+
+  @override
+  String netTheyOweUs(Object amount) {
+    return 'For us $amount';
+  }
+
+  @override
+  String netWeOweThem(Object amount) {
+    return 'On us $amount';
+  }
+
+  @override
+  String get netBalanced => 'Balanced';
+
+  @override
+  String get offsetSupplierTitle => 'Offset / contra settlement';
+
+  @override
+  String get offsetSupplierAction => 'Offset (Ù…Ù‚Ø§ØµØ©)';
+
+  @override
+  String get offsetAmountLabel => 'Offset amount';
+
+  @override
+  String offsetFullAmount(Object amount) {
+    return 'Offset full $amount';
+  }
+
+  @override
+  String offsetAmountInvalid(Object max) {
+    return 'Amount must be between 0.01 and $max';
+  }
+
+  @override
+  String get offsetNotAvailable => 'Nothing to offset';
+
+  @override
+  String get offsetConfirm => 'Offset';
+
+  @override
+  String get offsetSuccess => 'Offset recorded';
+
+  @override
+  String get purchaseAlreadyReceived => 'This order was already received.';
+
+  @override
+  String get installmentAlreadyPaid => 'Installment already paid.';
+
+  @override
+  String get installmentPaidSuccess => 'Installment paid.';
+
+  @override
+  String payInstallmentTitle(Object no) {
+    return 'Pay installment #$no';
+  }
+
+  @override
+  String get payInstallmentTitleGeneric => 'Pay installment';
+
+  @override
+  String get installmentScheduled => 'Scheduled';
+
+  @override
+  String get installmentAlreadyPaidAmount => 'Already paid';
+
+  @override
+  String get installmentBalanceDue => 'Balance due';
+
+  @override
+  String get payAmountLabel => 'Pay amount';
+
+  @override
+  String payFullBalance(Object amount) {
+    return 'Pay full balance ($amount)';
+  }
+
+  @override
+  String installmentPayAmountInvalid(Object max) {
+    return 'Amount must be between 0.01 and $max';
+  }
+
+  @override
+  String get returnResolution => 'Resolution';
+
+  @override
+  String get resolutionRestock => 'Restock inventory';
+
+  @override
+  String get resolutionCreditNote => 'Credit note (reduce customer balance)';
+
+  @override
+  String get resolutionRefundCash => 'Refund cash';
+
+  @override
+  String get resolutionReplace => 'Replace item';
+
+  @override
+  String get resolutionWriteoff => 'Write off (no restock)';
+
+  @override
+  String get resolutionSupplierCredit => 'Supplier credit (reduce payables)';
+
+  @override
+  String get returnDefectiveHint =>
+      'Defective items are not restocked. Use Write off or Refund cash so the customer gets their money back.';
+
+  @override
+  String get returnLinesSummary => 'Return lines';
+
+  @override
+  String get returnApprovedRefresh =>
+      'Return approved. Inventory and dashboard will refresh.';
+
+  @override
+  String get resolutionHintRestockOnly =>
+      'Stock increases at the branch. No cash refund on the dashboard.';
+
+  @override
+  String get resolutionHintRefundOnly =>
+      'Customer refund is deducted from dashboard totals.';
+
+  @override
+  String get resolutionHintRestockAndRefund =>
+      'Stock increases and customer refund applies (cash / credit note).';
+
+  @override
+  String get resolutionHintWriteoffDefective =>
+      'Defective: no restock. Customer receives refund (unit price Ã— qty).';
+
+  @override
+  String get resolutionHintReplace =>
+      'Replacement â€” no automatic stock or refund in this resolution.';
+
+  @override
+  String get weeklyCustomerRefunds => 'Weekly customer refunds';
+
+  @override
+  String get weeklyNetSales => 'Weekly net sales';
+
+  @override
+  String get invoiceReturnStatusReturned => 'Fully returned';
+
+  @override
+  String get invoiceReturnStatusPartial => 'Partial return';
+
+  @override
+  String get quantitySold => 'Sold';
+
+  @override
+  String get quantityAvailableForReturn => 'Available to return';
+
+  @override
+  String get quantityReturned => 'Returned';
+
+  @override
+  String get quantityRemaining => 'Remaining';
+
+  @override
+  String get returnRefundTotal => 'Refund total';
+
+  @override
+  String get reprintInvoice => 'Reprint invoice';
+
+  @override
+  String get returnItemsTitle => 'Return items';
+
+  @override
+  String returnQuantityExceeded(Object available) {
+    return 'You can only return $available more of this item.';
+  }
+
+  @override
+  String get returnsOnInvoice => 'Returns on this invoice';
+
+  @override
+  String get netAfterReturns => 'Net after returns';
+
+  @override
+  String get originalTotal => 'Original total';
+
+  @override
+  String get returnedCompleted => 'Returned (completed)';
+
+  @override
+  String soldQtyLabel(Object qty) {
+    return 'Sold $qty';
+  }
+
+  @override
+  String availableQtyLabel(Object qty) {
+    return 'Available: $qty';
+  }
+
+  @override
+  String returnedQtyLabel(Object completed, Object pending) {
+    return 'Returned: $completed (pending $pending)';
+  }
+
+  @override
+  String get invoiceAlreadyReturned =>
+      'This invoice was already returned. Choose another invoice.';
+
+  @override
+  String invoiceReturnStatusLabel(Object status) {
+    return 'Return status: $status';
+  }
+
+  @override
+  String get noInvoicesAvailableForReturn =>
+      'No invoices available for return (all returned or cancelled).';
 
   @override
   String get branchesTitle => 'Branches';
@@ -714,7 +1111,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String invoicePickerLabel(Object id, Object customer, Object total) {
-    return '$id · $customer · $total';
+    return '$id Â· $customer Â· $total';
   }
 
   @override
@@ -755,7 +1152,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String returnRowTitle(Object type, Object status) {
-    return '$type — $status';
+    return '$type â€” $status';
   }
 
   @override
@@ -785,7 +1182,46 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settlementsSubtitle =>
-      'Saturday credit settlements — marks all unpaid credit invoices as paid';
+      'Collect credit customer balances — daily or weekly (Saturday) cycles';
+
+  @override
+  String get settlementsDueTab => 'Due now';
+
+  @override
+  String get settlementsHistoryTab => 'History';
+
+  @override
+  String get settlementsUpcomingEmpty => 'No customers due for collection';
+
+  @override
+  String get settlementsFilterAll => 'All due';
+
+  @override
+  String get settlementsFilterDaily => 'Daily';
+
+  @override
+  String get settlementsFilterWeekly => 'Weekly';
+
+  @override
+  String get settlementCycleLabel => 'Settlement cycle';
+
+  @override
+  String get settlementCycleWeekly => 'Weekly (Saturday)';
+
+  @override
+  String get settlementCycleDaily => 'Daily';
+
+  @override
+  String get lastSettledAt => 'Last collected';
+
+  @override
+  String get amountDue => 'Amount due';
+
+  @override
+  String get settleAll => 'Settle all';
+
+  @override
+  String get partialPay => 'Partial pay';
 
   @override
   String get recordSettlement => 'Record settlement';
@@ -829,7 +1265,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String settlementRowSubtitle(Object date, Object amount) {
-    return '$date · $amount';
+    return '$date Â· $amount';
   }
 
   @override
@@ -852,7 +1288,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String transferBranches(Object from, Object to) {
-    return '$from → $to';
+    return '$from â†’ $to';
   }
 
   @override
@@ -902,7 +1338,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get pendingSyncTitle => 'Pending sync';
 
   @override
-  String get syncing => 'Syncing…';
+  String get syncing => 'Syncingâ€¦';
 
   @override
   String get syncNow => 'Sync now';
@@ -912,7 +1348,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String pendingRowSubtitle(Object status, Object total, Object date) {
-    return '$status · $total · $date';
+    return '$status Â· $total Â· $date';
   }
 
   @override
@@ -959,11 +1395,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportDescSales =>
-      'All sales invoices in the selected period — number, customer, payment type, and total.';
+      'All sales invoices in the selected period â€” number, customer, payment type, and total.';
 
   @override
   String get reportDescInventory =>
-      'Current stock value: quantity × cost and × sell price per part.';
+      'Current stock value: quantity Ã— cost and Ã— sell price per part.';
 
   @override
   String get reportDescCustomers =>
@@ -1076,20 +1512,38 @@ class AppLocalizationsEn extends AppLocalizations {
   String get partSaved => 'Part saved';
 
   @override
-  String get partCreateNotAllowed => 'Only managers can add parts';
+  String get partDeleted => 'Part deleted';
 
   @override
-  String get partCodeDuplicate => 'Part code already exists — use another code';
+  String confirmDeletePart(Object name) {
+    return 'Delete $name? This cannot be undone if the part has no sales history.';
+  }
+
+  @override
+  String get partCreateNotAllowed => 'Only admins and managers can add parts';
+
+  @override
+  String get partAddOffline => 'Connect to the internet to add products.';
+
+  @override
+  String get partBranchRequired => 'Select a branch before adding a part';
+
+  @override
+  String get openingQuantity => 'Opening qty';
+
+  @override
+  String get partCodeDuplicate =>
+      'Part code already exists â€” use another code';
 
   @override
   String get partFillCategoryUnit => 'Select category and unit from the list';
 
   @override
-  String get partInvalidUnit => 'Invalid unit — pick from the list';
+  String get partInvalidUnit => 'Invalid unit â€” pick from the list';
 
   @override
   String get failedLoadPartMeta =>
-      'Could not load categories or units — check connection';
+      'Could not load categories or units â€” check connection';
 
   @override
   String get partCategoriesTitle => 'Part categories';
@@ -1112,7 +1566,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Lowercase letters, digits, and underscores only';
 
   @override
-  String get categoryKeyInvalid => 'Invalid key — use a-z, 0-9, and _';
+  String get categoryKeyInvalid => 'Invalid key â€” use a-z, 0-9, and _';
 
   @override
   String get categoryName => 'Name';
@@ -1150,7 +1604,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get partImageInvalidType =>
-      'Unsupported file type — use JPG, PNG, or WebP only';
+      'Unsupported file type â€” use JPG, PNG, or WebP only';
 
   @override
   String get unitPc => 'Piece';
@@ -1186,8 +1640,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get minStock => 'Min stock';
 
   @override
-  String partRowSubtitle(Object category, Object sell, Object min) {
-    return '$category · $sell · $min';
+  String partRowSubtitle(
+    Object category,
+    Object sell,
+    Object cost,
+    Object min,
+  ) {
+    return '$category · sell $sell · cost $cost · min $min';
   }
 
   @override
@@ -1238,12 +1697,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String quantityTimes(Object qty) {
-    return '×$qty';
+    return 'Ã—$qty';
   }
 
   @override
   String invoiceRowSubtitle(Object payment, Object date) {
-    return '$payment · $date';
+    return '$payment Â· $date';
   }
 
   @override
@@ -1463,7 +1922,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String branchLedgerRow(Object debtor, Object creditor, Object amount) {
-    return '$debtor → $creditor · $amount';
+    return '$debtor â†’ $creditor Â· $amount';
   }
 
   @override
@@ -1515,6 +1974,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Transfer completed; inter-branch charge recorded';
 
   @override
+  String get editTransfer => 'Edit transfer';
+
+  @override
+  String get transferEditPendingOnly => 'Only pending transfers can be edited.';
+
+  @override
+  String get transferUpdated => 'Transfer updated';
+
+  @override
+  String get editPayment => 'Edit payment';
+
+  @override
+  String get editPaymentHint =>
+      'Only the most recent payment can be corrected.';
+
+  @override
+  String get paymentUpdated => 'Payment updated';
+
+  @override
   String get partsSalesChartTitle => 'Parts sales chart';
 
   @override
@@ -1531,7 +2009,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get reportDescPartsSalesChart =>
-      'Monthly trend for top parts — by units or revenue.';
+      'Monthly trend for top parts â€” by units or revenue.';
 
   @override
   String get year => 'Year';
@@ -1550,6 +2028,237 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String topPartsYear(Object year) {
-    return 'Top parts — $year';
+    return 'Top parts â€” $year';
   }
+
+  @override
+  String get financialReportTitle => 'Financial report (P&L)';
+
+  @override
+  String get reportDescFinancial =>
+      'Revenue, discounts, refunds, gross profit, and net profit by period. Returns use approval date.';
+
+  @override
+  String get colRevenue => 'Revenue';
+
+  @override
+  String get colGrossProfit => 'Gross profit';
+
+  @override
+  String get financialReturnsSection => 'Returns in period';
+
+  @override
+  String get financialCustomerReturns => 'Customer returns';
+
+  @override
+  String get financialSupplierReturns => 'Supplier returns';
+
+  @override
+  String get financialByBranch => 'By branch';
+
+  @override
+  String get financialReturnsApprovalNote =>
+      'Returns are counted by approval date (completed_at), not create date.';
+
+  @override
+  String get usersTitle => 'Users';
+
+  @override
+  String get usersSubtitle =>
+      'Manage staff accounts, roles, and branch assignment (admin only).';
+
+  @override
+  String get newUser => 'New user';
+
+  @override
+  String get editUser => 'Edit user';
+
+  @override
+  String get userSaved => 'User saved';
+
+  @override
+  String get userDeactivated => 'User deactivated';
+
+  @override
+  String get deactivateUser => 'Deactivate user';
+
+  @override
+  String deactivateUserConfirm(Object name) {
+    return 'Deactivate $name? They will no longer be able to sign in.';
+  }
+
+  @override
+  String get role => 'Role';
+
+  @override
+  String get posSelectBranch => 'Select branch for this sale';
+
+  @override
+  String get posBranchRequiredHint =>
+      'Choose a branch before adding items or completing a sale.';
+
+  @override
+  String get businessCapitalTitle => 'Business capital';
+
+  @override
+  String get businessCapitalSubtitleAdmin =>
+      'Set owner funding used to compare stock and receivables against available cash.';
+
+  @override
+  String get businessCapitalSubtitleView =>
+      'Financing overview (read-only). Contact an admin to change capital.';
+
+  @override
+  String get businessCapitalAmount => 'Owner capital';
+
+  @override
+  String get businessCapitalSet => 'Update capital';
+
+  @override
+  String get businessCapitalUpdateTitle => 'Update business capital';
+
+  @override
+  String get businessCapitalSaved => 'Business capital saved';
+
+  @override
+  String get businessCapitalDefaultReason => 'Capital adjustment';
+
+  @override
+  String get businessCapitalNotSet =>
+      'Capital not configured yet. An admin can set it below.';
+
+  @override
+  String get businessCapitalHistory => 'Capital history';
+
+  @override
+  String get branchFilterAll => 'All branches';
+
+  @override
+  String get branchFilterLabel => 'Branch';
+
+  @override
+  String get branchFilterClear => 'Clear branch filter';
+
+  @override
+  String get withdrawFromProfit => 'Withdraw from profit';
+
+  @override
+  String get withdrawableProfit => 'Withdrawable profit';
+
+  @override
+  String get profitWithdrawnSuccess => 'Profit withdrawn';
+
+  @override
+  String get noWithdrawableProfit => 'No withdrawable profit available';
+
+  @override
+  String get ownerCashOutTitle => 'Owner cash out';
+
+  @override
+  String get ownerCashOutSubtitle =>
+      'Withdraw realized profit. Business capital is not reduced.';
+
+  @override
+  String get ownerCashOutRecord => 'Cash out';
+
+  @override
+  String get ownerCashOutConfirm => 'Confirm';
+
+  @override
+  String get ownerCashOutAmount => 'Amount';
+
+  @override
+  String get ownerCashOutReason => 'Reason';
+
+  @override
+  String get ownerCashOutSuccess => 'Cash out recorded';
+
+  @override
+  String get ownerCashOutHistory => 'Cash out history';
+
+  @override
+  String ownerCashOutAmountInvalid(Object max) {
+    return 'Amount must be between 0.01 and $max';
+  }
+
+  @override
+  String get capitalInventoryAtCost => 'Inventory (at cost)';
+
+  @override
+  String get capitalCustomerReceivables => 'Customer receivables';
+
+  @override
+  String get capitalSupplierDebt => 'Supplier debt';
+
+  @override
+  String get capitalDeployed => 'Deployed capital';
+
+  @override
+  String get capitalEstimatedAvailable => 'Est. available cash';
+
+  @override
+  String get notes => 'Notes';
+
+  @override
+  String get invalidAmount => 'Enter a valid amount';
+
+  @override
+  String get weeklyDiscount => 'Weekly discounts';
+
+  @override
+  String get weeklyGrossProfit => 'Weekly gross profit';
+
+  @override
+  String get dashboardPurchasesTitle => 'Purchases & supplier debt';
+
+  @override
+  String get dashboardPurchasesSubtitle =>
+      'POs, installments, and payments this week';
+
+  @override
+  String get totalSupplierDebt => 'Total supplier debt';
+
+  @override
+  String get unpaidInstallmentsTotal => 'Unpaid installments';
+
+  @override
+  String get unpaidInstallmentsCount => 'Unpaid installments';
+
+  @override
+  String get overdueInstallmentsTotal => 'Overdue installments';
+
+  @override
+  String get weeklySupplierPayments => 'Supplier payments (week)';
+
+  @override
+  String get weeklyPurchasesOrdered => 'Purchases ordered (week)';
+
+  @override
+  String get weeklyPurchasesReceived => 'Purchases received (week)';
+
+  @override
+  String get payablesOverdueInstallments => 'Overdue installments';
+
+  @override
+  String get payablesUpcomingInstallments => 'Upcoming installments';
+
+  @override
+  String get viewInstallments => 'View installments';
+
+  @override
+  String get averageCost => 'Average cost';
+
+  @override
+  String get catalogCostRollup => 'Weighted average cost';
+
+  @override
+  String get costFromPurchasesHint =>
+      'Leave blank to use the current branch average.';
+
+  @override
+  String get catalogCostRollupHint =>
+      'Catalog rollup — branch costs update from purchases and stock receipts.';
+
+  @override
+  String get adjustUnitCostOptional => 'Unit cost (optional)';
 }

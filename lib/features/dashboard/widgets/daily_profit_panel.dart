@@ -137,24 +137,44 @@ class DailyProfitPanel extends StatelessWidget {
 
   List<Widget> _buildChips(BuildContext context, AppLocalizations l10n) {
     if (metrics.isWeekly) {
-      return [
+      final chips = <Widget>[
         _MetricChip(
-          label: l10n.weeklyRevenue,
+          label: l10n.weeklyCustomerRefunds,
+          value: formatMoney(context, metrics.customerRefunds),
+          icon: Icons.undo_outlined,
+          accent: metrics.customerRefunds > 0
+              ? AppColors.warning
+              : null,
+        ),
+        if (metrics.weeklyDiscount > 0)
+          _MetricChip(
+            label: l10n.weeklyDiscount,
+            value: formatMoney(context, metrics.weeklyDiscount),
+            icon: Icons.discount_outlined,
+            accent: AppColors.warning,
+          ),
+        if (metrics.weeklyGrossProfit > 0)
+          _MetricChip(
+            label: l10n.weeklyGrossProfit,
+            value: formatMoney(context, metrics.weeklyGrossProfit),
+            icon: Icons.show_chart_outlined,
+          ),
+        if (metrics.refundProfitImpact > 0)
+          _MetricChip(
+            label: l10n.refundProfitImpact,
+            value: formatMoney(context, metrics.refundProfitImpact),
+            icon: Icons.trending_down_outlined,
+            accent: AppColors.warning,
+          ),
+        _MetricChip(
+          label: metrics.grossRevenue > 0 && metrics.grossRevenue != metrics.sales
+              ? l10n.weeklyNetSales
+              : l10n.weeklyRevenue,
           value: formatMoney(context, metrics.sales),
-          icon: Icons.point_of_sale_outlined,
-        ),
-        _MetricChip(
-          label: l10n.weeklyCost,
-          value: formatMoney(context, metrics.cost),
-          icon: Icons.shopping_bag_outlined,
-        ),
-        _MetricChip(
-          label: l10n.profitAmount,
-          value: formatMoney(context, metrics.profit),
-          icon: Icons.paid_outlined,
-          accent: AppColors.success,
+          icon: Icons.trending_up_outlined,
         ),
       ];
+      return chips;
     }
 
     final chips = <Widget>[

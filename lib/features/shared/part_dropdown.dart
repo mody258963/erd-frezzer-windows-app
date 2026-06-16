@@ -19,11 +19,17 @@ class PartPickOption {
     required this.partId,
     required this.label,
     this.availableQty,
+    this.unit,
+    this.unitLabel,
+    this.defaultUnitCost,
   });
 
   final String partId;
   final String label;
-  final int? availableQty;
+  final double? availableQty;
+  final String? unit;
+  final String? unitLabel;
+  final double? defaultUnitCost;
 }
 
 /// Parts at a branch (any qty) plus catalog items not yet stocked there.
@@ -43,6 +49,9 @@ Future<List<PartPickOption>> loadPartsForBranchAdjust(String branchId) async {
           partId: s.partId,
           label: label,
           availableQty: s.quantity,
+          unit: part?.unit,
+          unitLabel: part?.unitLabel,
+          defaultUnitCost: part?.costPrice,
         ),
       );
     }
@@ -59,6 +68,9 @@ Future<List<PartPickOption>> loadPartsForBranchAdjust(String branchId) async {
           partId: p.id,
           label: partDisplayLabel(p),
           availableQty: 0,
+          unit: p.unit,
+          unitLabel: p.unitLabel,
+          defaultUnitCost: p.costPrice,
         ),
       );
     }
@@ -86,6 +98,9 @@ Future<List<PartPickOption>> loadPartsForBranchTransfer(String fromBranchId) asy
           partId: s.partId,
           label: label,
           availableQty: s.quantity,
+          unit: part?.unit,
+          unitLabel: part?.unitLabel,
+          defaultUnitCost: part?.costPrice,
         ),
       );
     }
@@ -103,6 +118,9 @@ Future<List<PartPickOption>> loadPartsForBranchTransfer(String fromBranchId) asy
         (p) => PartPickOption(
           partId: p.id,
           label: partDisplayLabel(p),
+          unit: p.unit,
+          unitLabel: p.unitLabel,
+          defaultUnitCost: p.costPrice,
         ),
       )
       .toList();
@@ -153,6 +171,104 @@ class PartDropdown extends StatelessWidget {
       ],
       onChanged: options.isEmpty ? null : onChanged,
       validator: validator,
+    );
+  }
+}
+
+/// Searchable part picker for transfers, inventory adjust, etc.
+class PartPickSearchField extends StatelessWidget {
+  const PartPickSearchField({
+    required this.options,
+    required this.value,
+    required this.onChanged,
+    required this.label,
+    super.key,
+  });
+
+  final List<PartPickOption> options;
+  final String? value;
+  final ValueChanged<String?> onChanged;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    PartPickOption? selected;
+    if (value != null) {
+      for (final o in options) {
+        if (o.partId == value) {
+          selected = o;
+          break;
+        }
+      }
+    }
+
+    return Autocomplete<PartPickOption>(
+      initialValue: selected != null
+          ? TextEditingValue(text: selected.label)
+          : null,
+      displayStringForOption: (o) => o.label,
+      optionsBuilder: (query) {
+        final q = query.text.trim().toLowerCase();
+        if (q.isEmpty) return options.take(40);
+        return options
+            .where((o) => o.label.toLowerCase().contains(q))
+            .take(40);
+      },
+      onSelected: (o) => onChanged(o.partId),
+      fieldViewBuilder: (context, controller, focusNode, onFieldSubmitted) {
+        return TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            labelText: label,
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: value != null
+                ? IconButton(
+                    icon: const Icon(Icons.clear, size: 20),
+                    onPressed: () {
+                      controller.clear();
+                      onChanged(null);
+                    },
+                  )
+                : null,
+          ),
+          onChanged: (text) {
+            if (text.trim().isEmpty) onChanged(null);
+          },
+        );
+      },
+      optionsViewBuilder: (context, onSelected, opts) {
+        return Align(
+          alignment: Alignment.topLeft,
+          child: Material(
+            elevation: 4,
+            borderRadius: BorderRadius.circular(8),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxHeight: 240, maxWidth: 440),
+              child: ListView.builder(
+                padding: EdgeInsets.zero,
+                shrinkWrap: true,
+                itemCount: opts.length,
+                itemBuilder: (context, index) {
+                  final option = opts.elementAt(index);
+                  return ListTile(
+                    dense: true,
+                    title: Text(
+                      option.label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: option.availableQty != null
+                        ? Text('${option.availableQty}')
+                        : null,
+                    onTap: () => onSelected(option),
+                  );
+                },
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }

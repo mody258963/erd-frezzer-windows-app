@@ -19,13 +19,20 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase() : super(_openConnection());
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onUpgrade: (m, from, to) async {
           if (from < 2) {
             await m.addColumn(parts, parts.imageUrl);
+          }
+          if (from < 3) {
+            await m.addColumn(customers, customers.settlementCycle);
+            await m.addColumn(customers, customers.lastSettledAt);
+          }
+          if (from < 4) {
+            await m.addColumn(parts, parts.unit);
           }
         },
       );
@@ -39,6 +46,7 @@ class AppDatabase extends _$AppDatabase {
     required String code,
     required String name,
     required double sellPrice,
+    String? unit,
     String? imageUrl,
     bool isActive = true,
   }) async {
@@ -47,6 +55,7 @@ class AppDatabase extends _$AppDatabase {
         id: id,
         code: code,
         name: name,
+        unit: Value(unit),
         sellPrice: sellPrice,
         imageUrl: Value(imageUrl),
         isActive: Value(isActive),
@@ -58,7 +67,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> upsertStock({
     required String partId,
     required String branchId,
-    required int quantity,
+    required double quantity,
   }) async {
     await into(stockRows).insertOnConflictUpdate(
       StockRowsCompanion.insert(
@@ -75,6 +84,8 @@ class AppDatabase extends _$AppDatabase {
     required String type,
     double creditLimit = 0,
     double outstandingBalance = 0,
+    String? settlementCycle,
+    DateTime? lastSettledAt,
     bool isActive = true,
   }) async {
     await into(customers).insertOnConflictUpdate(
@@ -84,6 +95,8 @@ class AppDatabase extends _$AppDatabase {
         type: type,
         creditLimit: Value(creditLimit),
         outstandingBalance: Value(outstandingBalance),
+        settlementCycle: Value(settlementCycle),
+        lastSettledAt: Value(lastSettledAt),
         isActive: Value(isActive),
         syncedAt: Value(DateTime.now()),
       ),
@@ -102,7 +115,7 @@ class AppDatabase extends _$AppDatabase {
     return (sel..limit(limit)).get();
   }
 
-  Future<int> getStockQty(String partId, String branchId) async {
+  Future<double> getStockQty(String partId, String branchId) async {
     final row = await (select(stockRows)
           ..where(
             (s) => s.partId.equals(partId) & s.branchId.equals(branchId),
@@ -114,7 +127,7 @@ class AppDatabase extends _$AppDatabase {
   Future<void> decrementStock(
     String partId,
     String branchId,
-    int qty,
+    double qty,
   ) async {
     final current = await getStockQty(partId, branchId);
     await upsertStock(
@@ -132,6 +145,39 @@ class AppDatabase extends _$AppDatabase {
     final row = await (select(customers)..where((c) => c.id.equals(id)))
         .getSingleOrNull();
     return row?.name;
+  }
+
+  /// Marks local customers inactive when removed or deactivated on the server.
+  Future<int> deactivateCustomersExcept(Set<String> keepIds) async {
+    final q = update(customers)..where((c) => c.isActive.equals(true));
+    if (keepIds.isNotEmpty) {
+      q.where((c) => c.id.isNotIn(keepIds));
+    }
+    return q.write(const CustomersCompanion(isActive: Value(false)));
+  }
+
+  /// Marks local parts inactive when removed or deactivated on the server.
+  Future<int> deactivatePartsExcept(Set<String> keepIds) async {
+    final q = update(parts)..where((p) => p.isActive.equals(true));
+    if (keepIds.isNotEmpty) {
+      q.where((p) => p.id.isNotIn(keepIds));
+    }
+    return q.write(const PartsCompanion(isActive: Value(false)));
+  }
+
+  /// Replaces branch stock so quantities match the server inventory snapshot.
+  Future<void> replaceBranchStock(
+    String branchId,
+    Map<String, double> quantityByPartId,
+  ) async {
+    await (delete(stockRows)..where((s) => s.branchId.equals(branchId))).go();
+    for (final entry in quantityByPartId.entries) {
+      await upsertStock(
+        partId: entry.key,
+        branchId: branchId,
+        quantity: entry.value,
+      );
+    }
   }
 
   Future<String?> getMeta(String key) async {

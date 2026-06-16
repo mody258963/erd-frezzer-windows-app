@@ -11,6 +11,8 @@ enum AppAction {
   inventoryAdjust,
   transferCreate,
   transferCancel,
+  transferEdit,
+  paymentEdit,
   customerDelete,
   invoiceCreate,
   invoiceCancel,
@@ -25,6 +27,9 @@ enum AppAction {
   returnApprove,
   returnReject,
   branchFinanceWrite,
+  userManage,
+  capitalEdit,
+  capitalView,
 }
 
 class NavDestination {
@@ -101,6 +106,9 @@ class RolePermissions {
     if (path.contains('part-categories')) {
       return role == UserRole.admin || role == UserRole.manager;
     }
+    if (path.contains('/settings/users')) {
+      return role == UserRole.admin;
+    }
     if (path.startsWith(RoutePaths.settings)) {
       return true;
     }
@@ -125,6 +133,9 @@ class RolePermissions {
         return role != UserRole.salesperson;
       case AppAction.transferCancel:
         return role == UserRole.admin || role == UserRole.manager;
+      case AppAction.transferEdit:
+      case AppAction.paymentEdit:
+        return role == UserRole.admin;
       case AppAction.customerDelete:
         return role == UserRole.admin;
       case AppAction.invoiceCreate:
@@ -150,6 +161,12 @@ class RolePermissions {
         return role == UserRole.admin || role == UserRole.manager;
       case AppAction.branchFinanceWrite:
         return role == UserRole.admin || role == UserRole.manager;
+      case AppAction.userManage:
+        return role == UserRole.admin;
+      case AppAction.capitalEdit:
+        return role == UserRole.admin;
+      case AppAction.capitalView:
+        return role == UserRole.admin || role == UserRole.manager;
     }
   }
 
@@ -171,16 +188,10 @@ class RolePermissions {
         routeKey: 'pos',
       ),
       const NavDestination(
-        labelKey: 'navParts',
+        labelKey: 'navPartsStock',
         icon: 0xf05b0,
         path: RoutePaths.parts,
         routeKey: 'parts',
-      ),
-      const NavDestination(
-        labelKey: 'navStock',
-        icon: 0xe1a1,
-        path: RoutePaths.inventory,
-        routeKey: 'inventory',
       ),
       const NavDestination(
         labelKey: 'navCustomers',
@@ -189,28 +200,10 @@ class RolePermissions {
         routeKey: 'customers',
       ),
       const NavDestination(
-        labelKey: 'navSales',
-        icon: 0xe8cc,
-        path: RoutePaths.invoices,
-        routeKey: 'invoices',
-      ),
-      const NavDestination(
-        labelKey: 'navSettle',
-        icon: 0xe8f0,
-        path: RoutePaths.settlements,
-        routeKey: 'settlements',
-      ),
-      const NavDestination(
         labelKey: 'navSupply',
         icon: 0xe558,
         path: RoutePaths.suppliers,
         routeKey: 'suppliers',
-      ),
-      const NavDestination(
-        labelKey: 'navPurchases',
-        icon: 0xe8f9,
-        path: RoutePaths.purchases,
-        routeKey: 'purchases',
       ),
       const NavDestination(
         labelKey: 'navReturns',
@@ -229,24 +222,6 @@ class RolePermissions {
         icon: 0xe84f,
         path: RoutePaths.branches,
         routeKey: 'branches',
-      ),
-      const NavDestination(
-        labelKey: 'navTransfers',
-        icon: 0xe531,
-        path: RoutePaths.transfers,
-        routeKey: 'transfers',
-      ),
-      const NavDestination(
-        labelKey: 'navBranchFinance',
-        icon: 0xe8f1,
-        path: RoutePaths.branchFinance,
-        routeKey: 'branchFinance',
-      ),
-      const NavDestination(
-        labelKey: 'navInstallments',
-        icon: 0xe263,
-        path: RoutePaths.installments,
-        routeKey: 'installments',
       ),
       const NavDestination(
         labelKey: 'navPending',

@@ -49,6 +49,7 @@ ActivityPresentation presentActivity(
     'part.update' => l.activityPartUpdated,
     'supplier.create' => l.activitySupplierCreated,
     'sync.complete' => l.activitySyncCompleted,
+    'owner.cash_out' => l.activityOwnerCashOut,
     _ => l.activityGeneric(
       _humanizeToken(action.isNotEmpty ? action : key),
       _humanizeEntity(context, entity),
@@ -137,6 +138,7 @@ IconData _iconForKey(String key, String entity) {
   if (key.contains('part')) return Icons.build_outlined;
   if (key.contains('supplier')) return Icons.local_shipping_outlined;
   if (key.contains('sync')) return Icons.cloud_done_outlined;
+  if (key.contains('cash_out')) return Icons.output_outlined;
   return switch (entity) {
     'invoice' || 'sale' => Icons.receipt_long_outlined,
     'stock' || 'inventory' => Icons.inventory_2_outlined,

@@ -11,6 +11,7 @@ import '../../data/models/part_category_model.dart';
 import '../../data/repositories/part_category_repository.dart';
 import '../../di/injection.dart';
 import '../shared/form_field_spacing.dart';
+import '../shared/image_lightbox.dart';
 import '../shared/loading_error.dart';
 import '../shared/part_network_image.dart';
 
@@ -24,6 +25,8 @@ class PartFormResult {
     required this.sellPrice,
     required this.costPrice,
     required this.minStock,
+    this.initialQuantity = 0,
+    this.isActive = true,
     this.pendingImagePath,
     this.removeImage = false,
   });
@@ -35,6 +38,8 @@ class PartFormResult {
   final double sellPrice;
   final double costPrice;
   final int minStock;
+  final int initialQuantity;
+  final bool isActive;
   final String? pendingImagePath;
   final bool removeImage;
 }
@@ -51,6 +56,7 @@ class PartFormDialog extends StatefulWidget {
     this.initialMinStock,
     this.initialImageUrl,
     this.isEdit = false,
+    this.branchLabel,
   });
 
   final String? initialCode;
@@ -62,6 +68,7 @@ class PartFormDialog extends StatefulWidget {
   final int? initialMinStock;
   final String? initialImageUrl;
   final bool isEdit;
+  final String? branchLabel;
 
   @override
   State<PartFormDialog> createState() => _PartFormDialogState();
@@ -74,6 +81,7 @@ class _PartFormDialogState extends State<PartFormDialog> {
   late final TextEditingController _sell;
   late final TextEditingController _cost;
   late final TextEditingController _minStock;
+  late final TextEditingController _openingQty;
 
   List<PartCategoryModel> _categories = [];
   List<PartUnitOption> _units = [];
@@ -92,6 +100,7 @@ class _PartFormDialogState extends State<PartFormDialog> {
     _sell = TextEditingController(text: '${widget.initialSellPrice ?? 0}');
     _cost = TextEditingController(text: '${widget.initialCostPrice ?? 0}');
     _minStock = TextEditingController(text: '${widget.initialMinStock ?? 0}');
+    _openingQty = TextEditingController(text: '0');
     _categoryKey = widget.initialCategoryKey;
     _unit = widget.initialUnit;
     _loadMeta();
@@ -104,6 +113,7 @@ class _PartFormDialogState extends State<PartFormDialog> {
     _sell.dispose();
     _cost.dispose();
     _minStock.dispose();
+    _openingQty.dispose();
     super.dispose();
   }
 
@@ -201,6 +211,7 @@ class _PartFormDialogState extends State<PartFormDialog> {
         sellPrice: double.tryParse(_sell.text.trim()) ?? 0,
         costPrice: double.tryParse(_cost.text.trim()) ?? 0,
         minStock: int.tryParse(_minStock.text.trim()) ?? 0,
+        initialQuantity: int.tryParse(_openingQty.text.trim()) ?? 0,
         pendingImagePath: _pendingImagePath,
         removeImage: _removeImage,
       ),
@@ -227,7 +238,16 @@ class _PartFormDialogState extends State<PartFormDialog> {
                 width: 72,
                 height: 72,
                 child: _pendingImagePath != null
-                    ? Image.file(File(_pendingImagePath!), fit: BoxFit.cover)
+                    ? LightboxTapTarget(
+                        onTap: () => showImageLightbox(
+                          context,
+                          file: File(_pendingImagePath!),
+                        ),
+                        child: Image.file(
+                          File(_pendingImagePath!),
+                          fit: BoxFit.cover,
+                        ),
+                      )
                     : hasNetwork
                         ? PartNetworkImage(
                             imageUrl: widget.initialImageUrl,
@@ -298,6 +318,15 @@ class _PartFormDialogState extends State<PartFormDialog> {
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: spacedFormFields([
+                              if (!widget.isEdit &&
+                                  widget.branchLabel != null &&
+                                  widget.branchLabel!.isNotEmpty)
+                                InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: l10n.branch,
+                                  ),
+                                  child: Text(widget.branchLabel!),
+                                ),
                               _buildImageSection(context),
                               TextFormField(
                                 controller: _code,
@@ -317,7 +346,7 @@ class _PartFormDialogState extends State<PartFormDialog> {
                                     : null,
                               ),
                               DropdownButtonFormField<String>(
-                                value: _categories
+                                initialValue: _categories
                                         .any((c) => c.key == _categoryKey)
                                     ? _categoryKey
                                     : _categories.first.key,
@@ -338,7 +367,7 @@ class _PartFormDialogState extends State<PartFormDialog> {
                                     v == null ? l10n.fieldRequired : null,
                               ),
                               DropdownButtonFormField<String>(
-                                value: _units.any((u) => u.value == _unit)
+                                initialValue: _units.any((u) => u.value == _unit)
                                     ? _unit
                                     : _units.first.value,
                                 decoration: InputDecoration(
@@ -373,17 +402,32 @@ class _PartFormDialogState extends State<PartFormDialog> {
                                 ),
                                 textDirection: TextDirection.ltr,
                               ),
-                              TextFormField(
-                                controller: _cost,
-                                decoration: InputDecoration(
-                                  labelText: l10n.costPrice,
+                              if (widget.isEdit)
+                                InputDecorator(
+                                  decoration: InputDecoration(
+                                    labelText: l10n.catalogCostRollup,
+                                    helperText: l10n.catalogCostRollupHint,
+                                  ),
+                                  child: Text(
+                                    formatMoney(
+                                      context,
+                                      widget.initialCostPrice ?? 0,
+                                    ),
+                                    textDirection: TextDirection.ltr,
+                                  ),
+                                )
+                              else
+                                TextFormField(
+                                  controller: _cost,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.costPrice,
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                    decimal: true,
+                                  ),
+                                  textDirection: TextDirection.ltr,
                                 ),
-                                keyboardType:
-                                    const TextInputType.numberWithOptions(
-                                  decimal: true,
-                                ),
-                                textDirection: TextDirection.ltr,
-                              ),
                               TextFormField(
                                 controller: _minStock,
                                 decoration: InputDecoration(
@@ -392,6 +436,15 @@ class _PartFormDialogState extends State<PartFormDialog> {
                                 keyboardType: TextInputType.number,
                                 textDirection: TextDirection.ltr,
                               ),
+                              if (!widget.isEdit)
+                                TextFormField(
+                                  controller: _openingQty,
+                                  decoration: InputDecoration(
+                                    labelText: l10n.openingQuantity,
+                                  ),
+                                  keyboardType: TextInputType.number,
+                                  textDirection: TextDirection.ltr,
+                                ),
                             ]),
                           ),
                         ),

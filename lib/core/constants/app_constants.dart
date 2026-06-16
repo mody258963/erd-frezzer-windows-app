@@ -8,4 +8,6 @@ class AppConstants {
   static const localeCodeKey = 'locale_code';
   static const defaultLocaleCode = 'ar';
   static const autoPrintOnSaleKey = 'auto_print_on_sale';
+  static const posBranchIdKey = 'pos_branch_id';
+  static const adminBranchFilterIdKey = 'admin_branch_filter_id';
 }

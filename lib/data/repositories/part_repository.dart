@@ -8,11 +8,16 @@ class PartRepository {
   PartRepository(this._dio);
   final Dio _dio;
 
-  Future<List<PartModel>> list({String? search, int perPage = 50}) async {
+  Future<List<PartModel>> list({
+    String? search,
+    String? branchId,
+    int perPage = 50,
+  }) async {
     final response = await _dio.get<dynamic>(
       '/parts',
       queryParameters: {
         if (search != null && search.isNotEmpty) 'search': search,
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
         'per_page': perPage,
       },
     );
@@ -24,8 +29,21 @@ class PartRepository {
     return PartModel.fromJson(parseObject(response.data));
   }
 
-  Future<PartModel> create(Map<String, dynamic> body) async {
-    final response = await _dio.post<dynamic>('/parts', data: body);
+  Future<PartModel> create(
+    Map<String, dynamic> body, {
+    String? branchId,
+  }) async {
+    final bid = branchId?.trim();
+    final payload = {
+      ...body,
+      if (bid != null && bid.isNotEmpty) 'branch_id': bid,
+    };
+    final response = await _dio.post<dynamic>(
+      '/parts',
+      queryParameters:
+          bid != null && bid.isNotEmpty ? {'branch_id': bid} : null,
+      data: payload,
+    );
     return PartModel.fromJson(parseObject(response.data));
   }
 

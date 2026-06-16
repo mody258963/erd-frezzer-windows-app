@@ -70,6 +70,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get navStock => 'المخزون';
 
   @override
+  String get navPartsStock => 'القطع والمخزون';
+
+  @override
   String get navCustomers => 'العملاء';
 
   @override
@@ -181,6 +184,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get activitySyncCompleted => 'اكتملت مزامنة البيانات';
 
   @override
+  String get activityOwnerCashOut => 'تم تسجيل سحب نقدي للمالك';
+
+  @override
   String activityGeneric(Object action, Object entity) {
     return '$action · $entity';
   }
@@ -290,6 +296,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get posSubtitle => 'ابحث عن قطعة أو امسح الباركود لإضافتها للسلة';
 
   @override
+  String get printDaySales => 'طباعة مبيعات اليوم';
+
+  @override
+  String get printDaySalesReport => 'تقرير مبيعات اليوم';
+
+  @override
+  String get noDaySales => 'لا توجد مبيعات اليوم للطباعة';
+
+  @override
+  String get daySalesPrinted => 'تم إرسال تقرير مبيعات اليوم للطابعة';
+
+  @override
   String get searchScanBarcode => 'بحث / مسح الباركود';
 
   @override
@@ -314,6 +332,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get cartEmpty => 'السلة فارغة';
 
   @override
+  String get removeFromCart => 'إزالة البند';
+
+  @override
   String get subtotal => 'المجموع الفرعي';
 
   @override
@@ -324,6 +345,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get completeSale => 'إتمام البيع';
+
+  @override
+  String get amountReceived => 'المبلغ المستلم';
+
+  @override
+  String get changeDue => 'الباقي للعميل';
+
+  @override
+  String get amountReceivedTooLow =>
+      'المبلغ المستلم يجب أن يكون على الأقل مساوياً للإجمالي';
 
   @override
   String get processing => 'جاري المعالجة…';
@@ -393,6 +424,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get newCustomer => 'عميل جديد';
+
+  @override
+  String get customerBranchRequired => 'اختر فرعاً قبل إضافة عميل';
 
   @override
   String get inventoryTitle => 'المخزون';
@@ -518,6 +552,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get suppliersTitle => 'الموردون';
+
+  @override
+  String get suppliersSubtitle => 'الموردون المسجلون في الفرع المحدد فقط';
+
+  @override
+  String get supplierBranchRequired => 'اختر فرعاً قبل إضافة مورد';
+
+  @override
+  String get supplierBranchPoHint => 'لا يوجد موردون في هذا الفرع بعد';
 
   @override
   String get newSupplier => 'مورد جديد';
@@ -689,6 +732,355 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customerSaved => 'تم حفظ العميل';
 
   @override
+  String get contactInfo => 'جهة الاتصال';
+
+  @override
+  String get purchaseHistory => 'سجل المشتريات';
+
+  @override
+  String get purchaseHistoryHint =>
+      'القطع التي اشتراها هذا العميل — متى وفي أي فرع.';
+
+  @override
+  String get noPurchaseHistory => 'لا توجد مشتريات مسجلة لهذا العميل بعد.';
+
+  @override
+  String get totalPurchases => 'إجمالي المشتريات';
+
+  @override
+  String get tapRowForInvoice => 'اضغط على صف لفتح الفاتورة كاملة.';
+
+  @override
+  String get customerViewThisWeek => 'هذا الأسبوع';
+
+  @override
+  String get customerViewHistory => 'مسددة / السجل';
+
+  @override
+  String customerThisWeekHint(Object range) {
+    return 'أعمال مفتوحة لـ $range — فواتير غير مسددة فقط.';
+  }
+
+  @override
+  String get customerHistoryHint => 'فواتير مسددة ومشتريات من أسابيع سابقة.';
+
+  @override
+  String get customerOpenWork => 'أعمال هذا الأسبوع';
+
+  @override
+  String get customerSettledHistory => 'مسددة والسجل';
+
+  @override
+  String get customerSettledHistoryHint =>
+      'فواتير مسددة عبر التسوية أو من قبل هذا الأسبوع.';
+
+  @override
+  String get customerNoOpenWorkThisWeek =>
+      'لا توجد فواتير مفتوحة هذا الأسبوع — الكل مسدد أو لم تُبع بعد.';
+
+  @override
+  String get customerNoSettledHistory => 'لا توجد فواتير مسددة أو أقدم بعد.';
+
+  @override
+  String customerWeekRange(Object from, Object to) {
+    return '$from – $to';
+  }
+
+  @override
+  String get customerNoWeekInvoices => 'لا توجد فواتير هذا الأسبوع للطباعة.';
+
+  @override
+  String get printWeekInvoices => 'طباعة الكل (مهمة واحدة)';
+
+  @override
+  String weekInvoicesPrinted(Object count) {
+    return 'تمت طباعة $count فاتورة';
+  }
+
+  @override
+  String get settled => 'مسددة';
+
+  @override
+  String get reportThisWeek => 'هذا الأسبوع';
+
+  @override
+  String get collectPaymentTitle => 'تحصيل دفعة';
+
+  @override
+  String get collectPaymentConfirm => 'تحصيل';
+
+  @override
+  String get collectPaymentSuccess => 'تم تسجيل الدفعة';
+
+  @override
+  String get customerNoBalanceDue => 'لا يوجد رصيد مستحق';
+
+  @override
+  String customerPayAmountInvalid(Object max) {
+    return 'يجب أن يكون المبلغ بين 0.01 و $max';
+  }
+
+  @override
+  String get customerPaymentHistory => 'سجل الدفعات';
+
+  @override
+  String get unpaidInvoicesTitle => 'فواتير غير مدفوعة';
+
+  @override
+  String get unpaidInvoicesHint =>
+      'تُطبّق الدفعات الجزئية على أقدم الفواتير أولاً.';
+
+  @override
+  String invoiceBalanceSubtitle(Object paid, Object due) {
+    return 'مدفوع $paid · مستحق $due';
+  }
+
+  @override
+  String get refundProfitImpact => 'تأثير المرتجع على الهامش';
+
+  @override
+  String get linkToSupplier => 'ربط بمورد';
+
+  @override
+  String get noLinkedSupplier => 'لا يوجد مورد مرتبط';
+
+  @override
+  String get linkedBalanceTitle => 'صافي الرصيد (مرتبط)';
+
+  @override
+  String get linkedNotLinkedHint =>
+      'اربط هذا العميل بمورد لعرض صافي الرصيد والمقاصة.';
+
+  @override
+  String linkedToSupplier(Object name) {
+    return 'المورد المرتبط: $name';
+  }
+
+  @override
+  String linkedToCustomer(Object name) {
+    return 'العميل المرتبط: $name';
+  }
+
+  @override
+  String get linkedCustomerReceivable => 'لنا عليهم';
+
+  @override
+  String get linkedSupplierPayable => 'علينا لهم';
+
+  @override
+  String get linkedNetBalance => 'صافي الرصيد';
+
+  @override
+  String netTheyOweUs(Object amount) {
+    return 'لنا $amount';
+  }
+
+  @override
+  String netWeOweThem(Object amount) {
+    return 'علينا $amount';
+  }
+
+  @override
+  String get netBalanced => 'متوازن';
+
+  @override
+  String get offsetSupplierTitle => 'مقاصة / تسوية مضادة';
+
+  @override
+  String get offsetSupplierAction => 'مقاصة';
+
+  @override
+  String get offsetAmountLabel => 'مبلغ المقاصة';
+
+  @override
+  String offsetFullAmount(Object amount) {
+    return 'مقاصة كامل $amount';
+  }
+
+  @override
+  String offsetAmountInvalid(Object max) {
+    return 'يجب أن يكون المبلغ بين 0.01 و $max';
+  }
+
+  @override
+  String get offsetNotAvailable => 'لا يوجد ما يُقاص';
+
+  @override
+  String get offsetConfirm => 'مقاصة';
+
+  @override
+  String get offsetSuccess => 'تم تسجيل المقاصة';
+
+  @override
+  String get purchaseAlreadyReceived => 'تم استلام هذا الطلب مسبقاً.';
+
+  @override
+  String get installmentAlreadyPaid => 'القسط مدفوع مسبقاً.';
+
+  @override
+  String get installmentPaidSuccess => 'تم دفع القسط.';
+
+  @override
+  String payInstallmentTitle(Object no) {
+    return 'دفع القسط #$no';
+  }
+
+  @override
+  String get payInstallmentTitleGeneric => 'دفع قسط';
+
+  @override
+  String get installmentScheduled => 'مجدول';
+
+  @override
+  String get installmentAlreadyPaidAmount => 'مدفوع مسبقاً';
+
+  @override
+  String get installmentBalanceDue => 'الرصيد المستحق';
+
+  @override
+  String get payAmountLabel => 'مبلغ الدفع';
+
+  @override
+  String payFullBalance(Object amount) {
+    return 'دفع الرصيد كاملاً ($amount)';
+  }
+
+  @override
+  String installmentPayAmountInvalid(Object max) {
+    return 'يجب أن يكون المبلغ بين 0.01 و $max';
+  }
+
+  @override
+  String get returnResolution => 'الإجراء';
+
+  @override
+  String get resolutionRestock => 'إعادة للمخزون';
+
+  @override
+  String get resolutionCreditNote => 'إشعار دائن (تخفيض رصيد العميل)';
+
+  @override
+  String get resolutionRefundCash => 'استرداد نقدي';
+
+  @override
+  String get resolutionReplace => 'استبدال القطعة';
+
+  @override
+  String get resolutionWriteoff => 'شطب (بدون إعادة للمخزون)';
+
+  @override
+  String get resolutionSupplierCredit => 'رصيد مورد (تخفيض المستحقات)';
+
+  @override
+  String get returnDefectiveHint =>
+      'القطع المعيبة لا تُعاد للمخزون. استخدم الشطب أو الاسترداد النقدي لإرجاع المال للعميل.';
+
+  @override
+  String get returnLinesSummary => 'بنود المرتجع';
+
+  @override
+  String get returnApprovedRefresh =>
+      'تمت الموافقة على المرتجع. سيتم تحديث المخزون ولوحة التحكم.';
+
+  @override
+  String get resolutionHintRestockOnly =>
+      'يزيد المخزون في الفرع. لا استرداد نقدي على لوحة التحكم.';
+
+  @override
+  String get resolutionHintRefundOnly =>
+      'يُخصم استرداد العميل من إجماليات لوحة التحكم.';
+
+  @override
+  String get resolutionHintRestockAndRefund =>
+      'يزيد المخزون ويُطبّق استرداد العميل (نقدي / إشعار دائن).';
+
+  @override
+  String get resolutionHintWriteoffDefective =>
+      'معيب: لا إعادة للمخزون. يسترد العميل (سعر الوحدة × الكمية).';
+
+  @override
+  String get resolutionHintReplace =>
+      'استبدال — لا مخزون أو استرداد تلقائي في هذا الإجراء.';
+
+  @override
+  String get weeklyCustomerRefunds => 'مرتجعات العملاء الأسبوعية';
+
+  @override
+  String get weeklyNetSales => 'صافي المبيعات الأسبوعية';
+
+  @override
+  String get invoiceReturnStatusReturned => 'مرتجع بالكامل';
+
+  @override
+  String get invoiceReturnStatusPartial => 'مرتجع جزئي';
+
+  @override
+  String get quantitySold => 'مباع';
+
+  @override
+  String get quantityAvailableForReturn => 'متاح للإرجاع';
+
+  @override
+  String get quantityReturned => 'مرتجع';
+
+  @override
+  String get quantityRemaining => 'متبقي';
+
+  @override
+  String get returnRefundTotal => 'إجمالي الاسترداد';
+
+  @override
+  String get reprintInvoice => 'إعادة طباعة الفاتورة';
+
+  @override
+  String get returnItemsTitle => 'إرجاع بنود';
+
+  @override
+  String returnQuantityExceeded(Object available) {
+    return 'يمكنك إرجاع $available فقط إضافية من هذا البند.';
+  }
+
+  @override
+  String get returnsOnInvoice => 'مرتجعات على هذه الفاتورة';
+
+  @override
+  String get netAfterReturns => 'الصافي بعد المرتجعات';
+
+  @override
+  String get originalTotal => 'الإجمالي الأصلي';
+
+  @override
+  String get returnedCompleted => 'مرتجع (مكتمل)';
+
+  @override
+  String soldQtyLabel(Object qty) {
+    return 'مباع $qty';
+  }
+
+  @override
+  String availableQtyLabel(Object qty) {
+    return 'متاح: $qty';
+  }
+
+  @override
+  String returnedQtyLabel(Object completed, Object pending) {
+    return 'مرتجع: $completed (معلق $pending)';
+  }
+
+  @override
+  String get invoiceAlreadyReturned =>
+      'تم إرجاع هذه الفاتورة مسبقاً. اختر فاتورة أخرى.';
+
+  @override
+  String invoiceReturnStatusLabel(Object status) {
+    return 'حالة الإرجاع: $status';
+  }
+
+  @override
+  String get noInvoicesAvailableForReturn =>
+      'لا توجد فواتير متاحة للإرجاع (الكل مرتجع أو ملغى).';
+
+  @override
   String get branchesTitle => 'الفروع';
 
   @override
@@ -782,7 +1174,46 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settlementsSubtitle =>
-      'تسوية حسابات العملاء الآجلة (السبت) — تسدد الفواتير غير المدفوعة تلقائياً';
+      'تحصيل ذمم العملاء الآجلين — دورة يومية أو أسبوعية (السبت)';
+
+  @override
+  String get settlementsDueTab => 'مستحق الآن';
+
+  @override
+  String get settlementsHistoryTab => 'السجل';
+
+  @override
+  String get settlementsUpcomingEmpty => 'لا يوجد عملاء مستحقون للتحصيل';
+
+  @override
+  String get settlementsFilterAll => 'كل المستحق';
+
+  @override
+  String get settlementsFilterDaily => 'يومي';
+
+  @override
+  String get settlementsFilterWeekly => 'أسبوعي';
+
+  @override
+  String get settlementCycleLabel => 'دورة التسوية';
+
+  @override
+  String get settlementCycleWeekly => 'أسبوعي (تسوية السبت)';
+
+  @override
+  String get settlementCycleDaily => 'يومي';
+
+  @override
+  String get lastSettledAt => 'آخر تحصيل';
+
+  @override
+  String get amountDue => 'المبلغ المستحق';
+
+  @override
+  String get settleAll => 'تسوية كاملة';
+
+  @override
+  String get partialPay => 'دفعة جزئية';
 
   @override
   String get recordSettlement => 'تسجيل تسوية';
@@ -1071,7 +1502,24 @@ class AppLocalizationsAr extends AppLocalizations {
   String get partSaved => 'تم حفظ القطعة';
 
   @override
-  String get partCreateNotAllowed => 'إضافة القطع متاحة للمدير فقط';
+  String get partDeleted => 'تم حذف القطعة';
+
+  @override
+  String confirmDeletePart(Object name) {
+    return 'حذف $name؟ لا يمكن التراجع إذا كانت القطعة مرتبطة بمبيعات.';
+  }
+
+  @override
+  String get partCreateNotAllowed => 'إضافة القطع متاحة للمسؤول والمدير فقط';
+
+  @override
+  String get partAddOffline => 'اتصل بالإنترنت لإضافة منتجات.';
+
+  @override
+  String get partBranchRequired => 'اختر فرعاً قبل إضافة قطعة';
+
+  @override
+  String get openingQuantity => 'كمية افتتاحية';
 
   @override
   String get partCodeDuplicate => 'كود القطعة مستخدم مسبقاً — غيّر الكود';
@@ -1179,8 +1627,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get minStock => 'الحد الأدنى';
 
   @override
-  String partRowSubtitle(Object category, Object sell, Object min) {
-    return '$category · بيع $sell · حد $min';
+  String partRowSubtitle(
+    Object category,
+    Object sell,
+    Object cost,
+    Object min,
+  ) {
+    return '$category · بيع $sell · تكلفة $cost · حد $min';
   }
 
   @override
@@ -1505,6 +1958,24 @@ class AppLocalizationsAr extends AppLocalizations {
       'تم إكمال التحويل وتسجيل المستحق بين الفروع';
 
   @override
+  String get editTransfer => 'تعديل التحويل';
+
+  @override
+  String get transferEditPendingOnly => 'يمكن تعديل التحويلات المعلقة فقط.';
+
+  @override
+  String get transferUpdated => 'تم تحديث التحويل';
+
+  @override
+  String get editPayment => 'تعديل الدفعة';
+
+  @override
+  String get editPaymentHint => 'يمكن تصحيح آخر دفعة فقط.';
+
+  @override
+  String get paymentUpdated => 'تم تحديث الدفعة';
+
+  @override
   String get partsSalesChartTitle => 'مبيعات القطع (رسم بياني)';
 
   @override
@@ -1541,4 +2012,235 @@ class AppLocalizationsAr extends AppLocalizations {
   String topPartsYear(Object year) {
     return 'أفضل القطع — $year';
   }
+
+  @override
+  String get financialReportTitle => 'التقرير المالي (أرباح وخسائر)';
+
+  @override
+  String get reportDescFinancial =>
+      'الإيرادات والخصومات والمرتجعات وإجمالي الربح وصافي الربح حسب الفترة. تُحسب المرتجعات بتاريخ الموافقة.';
+
+  @override
+  String get colRevenue => 'الإيراد';
+
+  @override
+  String get colGrossProfit => 'إجمالي الربح';
+
+  @override
+  String get financialReturnsSection => 'المرتجعات في الفترة';
+
+  @override
+  String get financialCustomerReturns => 'مرتجعات العملاء';
+
+  @override
+  String get financialSupplierReturns => 'مرتجعات الموردين';
+
+  @override
+  String get financialByBranch => 'حسب الفرع';
+
+  @override
+  String get financialReturnsApprovalNote =>
+      'تُحسب المرتجعات بتاريخ الموافقة (completed_at) وليس تاريخ الإنشاء.';
+
+  @override
+  String get usersTitle => 'المستخدمون';
+
+  @override
+  String get usersSubtitle =>
+      'إدارة حسابات الموظفين والأدوار وتعيين الفروع (للمسؤول فقط).';
+
+  @override
+  String get newUser => 'مستخدم جديد';
+
+  @override
+  String get editUser => 'تعديل مستخدم';
+
+  @override
+  String get userSaved => 'تم حفظ المستخدم';
+
+  @override
+  String get userDeactivated => 'تم تعطيل المستخدم';
+
+  @override
+  String get deactivateUser => 'تعطيل المستخدم';
+
+  @override
+  String deactivateUserConfirm(Object name) {
+    return 'تعطيل $name؟ لن يتمكن من تسجيل الدخول.';
+  }
+
+  @override
+  String get role => 'الدور';
+
+  @override
+  String get posSelectBranch => 'اختر الفرع لهذا البيع';
+
+  @override
+  String get posBranchRequiredHint =>
+      'اختر فرعاً قبل إضافة بنود أو إتمام البيع.';
+
+  @override
+  String get businessCapitalTitle => 'رأس مال النشاط';
+
+  @override
+  String get businessCapitalSubtitleAdmin =>
+      'حدّد تمويل المالك لمقارنة المخزون والذمم بالنقد المتاح.';
+
+  @override
+  String get businessCapitalSubtitleView =>
+      'نظرة عامة على التمويل (للقراءة فقط). تواصل مع المسؤول لتغيير رأس المال.';
+
+  @override
+  String get businessCapitalAmount => 'رأس مال المالك';
+
+  @override
+  String get businessCapitalSet => 'تحديث رأس المال';
+
+  @override
+  String get businessCapitalUpdateTitle => 'تحديث رأس مال النشاط';
+
+  @override
+  String get businessCapitalSaved => 'تم حفظ رأس المال';
+
+  @override
+  String get businessCapitalDefaultReason => 'تعديل رأس المال';
+
+  @override
+  String get businessCapitalNotSet =>
+      'لم يُضبط رأس المال بعد. يمكن للمسؤول ضبطه أدناه.';
+
+  @override
+  String get businessCapitalHistory => 'سجل رأس المال';
+
+  @override
+  String get branchFilterAll => 'كل الفروع';
+
+  @override
+  String get branchFilterLabel => 'الفرع';
+
+  @override
+  String get branchFilterClear => 'مسح فلتر الفرع';
+
+  @override
+  String get withdrawFromProfit => 'سحب من الأرباح';
+
+  @override
+  String get withdrawableProfit => 'الربح القابل للسحب';
+
+  @override
+  String get profitWithdrawnSuccess => 'تم سحب الربح';
+
+  @override
+  String get noWithdrawableProfit => 'لا يوجد ربح قابل للسحب';
+
+  @override
+  String get ownerCashOutTitle => 'سحب نقدي للمالك';
+
+  @override
+  String get ownerCashOutSubtitle =>
+      'سحب الربح المحقق. لا يُخفض رأس مال النشاط.';
+
+  @override
+  String get ownerCashOutRecord => 'سحب نقدي';
+
+  @override
+  String get ownerCashOutConfirm => 'تأكيد';
+
+  @override
+  String get ownerCashOutAmount => 'المبلغ';
+
+  @override
+  String get ownerCashOutReason => 'السبب';
+
+  @override
+  String get ownerCashOutSuccess => 'تم تسجيل السحب النقدي';
+
+  @override
+  String get ownerCashOutHistory => 'سجل السحب النقدي';
+
+  @override
+  String ownerCashOutAmountInvalid(Object max) {
+    return 'يجب أن يكون المبلغ بين 0.01 و $max';
+  }
+
+  @override
+  String get capitalInventoryAtCost => 'المخزون (بالتكلفة)';
+
+  @override
+  String get capitalCustomerReceivables => 'ذمم العملاء';
+
+  @override
+  String get capitalSupplierDebt => 'ديون الموردين';
+
+  @override
+  String get capitalDeployed => 'رأس المال المُستثمَر';
+
+  @override
+  String get capitalEstimatedAvailable => 'النقد المتاح (تقديري)';
+
+  @override
+  String get notes => 'ملاحظات';
+
+  @override
+  String get invalidAmount => 'أدخل مبلغاً صالحاً';
+
+  @override
+  String get weeklyDiscount => 'خصومات الأسبوع';
+
+  @override
+  String get weeklyGrossProfit => 'إجمالي ربح الأسبوع';
+
+  @override
+  String get dashboardPurchasesTitle => 'المشتريات وديون الموردين';
+
+  @override
+  String get dashboardPurchasesSubtitle =>
+      'أوامر الشراء والأقساط والمدفوعات هذا الأسبوع';
+
+  @override
+  String get totalSupplierDebt => 'إجمالي ديون الموردين';
+
+  @override
+  String get unpaidInstallmentsTotal => 'أقساط غير مدفوعة';
+
+  @override
+  String get unpaidInstallmentsCount => 'أقساط غير مدفوعة';
+
+  @override
+  String get overdueInstallmentsTotal => 'أقساط متأخرة';
+
+  @override
+  String get weeklySupplierPayments => 'مدفوعات الموردين (الأسبوع)';
+
+  @override
+  String get weeklyPurchasesOrdered => 'مشتريات مُطلَبة (الأسبوع)';
+
+  @override
+  String get weeklyPurchasesReceived => 'مشتريات مستلمة (الأسبوع)';
+
+  @override
+  String get payablesOverdueInstallments => 'أقساط متأخرة';
+
+  @override
+  String get payablesUpcomingInstallments => 'أقساط قادمة';
+
+  @override
+  String get viewInstallments => 'عرض الأقساط';
+
+  @override
+  String get averageCost => 'متوسط التكلفة';
+
+  @override
+  String get catalogCostRollup => 'متوسط التكلفة المرجح';
+
+  @override
+  String get costFromPurchasesHint =>
+      'اتركه فارغاً لاستخدام متوسط الفرع الحالي.';
+
+  @override
+  String get catalogCostRollupHint =>
+      'ملخص الكتالوج — تكاليف الفروع تتحدث من المشتريات واستلام المخزون.';
+
+  @override
+  String get adjustUnitCostOptional => 'تكلفة الوحدة (اختياري)';
 }

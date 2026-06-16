@@ -241,6 +241,15 @@ class _AnalysisBody extends StatelessWidget {
             title: context.l10n.stockLevel,
             metrics: [
               _Metric(
+                context.l10n.averageCost,
+                formatMoney(
+                  context,
+                  data.inventory.averageCost > 0
+                      ? data.inventory.averageCost
+                      : (data.part['cost_price'] as num?)?.toDouble() ?? 0,
+                ),
+              ),
+              _Metric(
                 context.l10n.stockLevel,
                 '${data.inventory.totalQuantity}',
               ),
@@ -608,6 +617,10 @@ class _StockByBranchTable extends StatelessWidget {
                     label: Text(l10n.quantity),
                     numeric: true,
                   ),
+                  DataColumn2(
+                    label: Text(l10n.averageCost),
+                    numeric: true,
+                  ),
                 ],
                 rows: [
                   for (final r in rows)
@@ -615,6 +628,13 @@ class _StockByBranchTable extends StatelessWidget {
                       cells: [
                         DataCell(Text(r.branchName)),
                         DataCell(Text('${r.quantity}')),
+                        DataCell(
+                          Text(
+                            r.averageCost != null
+                                ? formatMoney(context, r.averageCost)
+                                : '—',
+                          ),
+                        ),
                       ],
                     ),
                 ],

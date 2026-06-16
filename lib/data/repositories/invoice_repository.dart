@@ -5,6 +5,7 @@ import '../../core/api/api_utils.dart';
 import '../../core/connectivity/connectivity_cubit.dart';
 import '../local/app_database.dart';
 import '../models/invoice_model.dart';
+import '../models/invoice_receipt_model.dart';
 import 'package:drift/drift.dart' as drift;
 
 class InvoiceCreateResult {
@@ -35,6 +36,7 @@ class InvoiceRepository {
     String? to,
     String? customerId,
     String? paymentType,
+    String? branchId,
     int perPage = 50,
   }) async {
     final response = await _dio.get<dynamic>(
@@ -44,20 +46,31 @@ class InvoiceRepository {
         if (to != null) 'to': to,
         if (customerId != null) 'customer_id': customerId,
         if (paymentType != null) 'payment_type': paymentType,
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
         'per_page': perPage,
       },
     );
     return parseList(response.data, InvoiceModel.fromJson);
   }
 
-  Future<List<InvoiceModel>> pendingCredit() async {
-    final response = await _dio.get<dynamic>('/invoices/pending-credit');
+  Future<List<InvoiceModel>> pendingCredit({String? branchId}) async {
+    final response = await _dio.get<dynamic>(
+      '/invoices/pending-credit',
+      queryParameters: {
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
+      },
+    );
     return parseList(response.data, InvoiceModel.fromJson);
   }
 
   Future<InvoiceModel> get(String id) async {
     final response = await _dio.get<dynamic>('/invoices/$id');
     return InvoiceModel.fromJson(parseObject(response.data));
+  }
+
+  Future<InvoiceReceiptModel> receipt(String id) async {
+    final response = await _dio.get<dynamic>('/invoices/$id/receipt');
+    return InvoiceReceiptModel.fromJson(parseObject(response.data));
   }
 
   Future<void> cancel(String id) async {
@@ -70,7 +83,7 @@ class InvoiceRepository {
     required String paymentType,
     required double discount,
     required List<Map<String, dynamic>> items,
-    required List<({String partId, String code, String name, int qty, double price})> lineMeta,
+    required List<({String partId, String code, String name, double qty, double price})> lineMeta,
   }) async {
     final body = {
       'customer_id': customerId,
@@ -85,6 +98,9 @@ class InvoiceRepository {
         final response = await _dio.post<dynamic>('/invoices', data: body);
         final invoice =
             InvoiceModel.fromJson(parseObject(response.data));
+        for (final line in lineMeta) {
+          await _db.decrementStock(line.partId, branchId, line.qty);
+        }
         return InvoiceCreateResult.online(invoice);
       } on DioException catch (e) {
         if (e.response?.statusCode != 422) rethrow;
@@ -108,7 +124,7 @@ class InvoiceRepository {
     required String paymentType,
     required double discount,
     required List<Map<String, dynamic>> items,
-    required List<({String partId, String code, String name, int qty, double price})> lineMeta,
+    required List<({String partId, String code, String name, double qty, double price})> lineMeta,
   }) async {
     for (final line in lineMeta) {
       final available = await _db.getStockQty(line.partId, branchId);

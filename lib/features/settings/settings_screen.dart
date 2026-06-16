@@ -13,6 +13,8 @@ import '../../data/local/app_database.dart';
 import '../../di/injection.dart';
 import '../../router/route_paths.dart';
 import '../shared/page_scaffold.dart';
+import 'widgets/business_capital_card.dart';
+import 'widgets/owner_cash_out_card.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -64,12 +66,26 @@ class _SettingsScreenState extends State<SettingsScreen> {
         context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
     final canManageCategories =
         RolePermissions.canPerform(AppAction.partCategoryManage, role);
+    final canManageUsers =
+        RolePermissions.canPerform(AppAction.userManage, role);
+    final canViewCapital =
+        RolePermissions.canPerform(AppAction.capitalView, role);
+    final canEditCapital =
+        RolePermissions.canPerform(AppAction.capitalEdit, role);
     return PageScaffold(
       title: l10n.settingsTitle,
       subtitle: l10n.settingsSubtitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (canViewCapital) ...[
+            BusinessCapitalCard(role: role),
+            const SizedBox(height: 16),
+          ],
+          if (canEditCapital) ...[
+            OwnerCashOutCard(role: role),
+            const SizedBox(height: 16),
+          ],
           Card(
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -127,6 +143,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   title: Text(l10n.lastCatalogSync),
                   subtitle: Text(_lastSync ?? l10n.never),
                 ),
+                if (canManageUsers)
+                  ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppColors.primaryContainer,
+                      child: Icon(
+                        Icons.people_outline,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onPrimaryContainer,
+                      ),
+                    ),
+                    title: Text(l10n.usersTitle),
+                    subtitle: Text(l10n.usersSubtitle),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => context.go(RoutePaths.settingsUsers),
+                  ),
                 if (canManageCategories)
                   ListTile(
                     leading: CircleAvatar(

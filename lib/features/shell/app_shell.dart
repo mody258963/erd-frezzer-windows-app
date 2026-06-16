@@ -5,11 +5,12 @@ import 'package:go_router/go_router.dart';
 import '../../core/auth/auth_cubit.dart';
 import '../../core/auth/auth_state.dart';
 import '../../core/auth/role_permissions.dart';
+import '../../core/branch/branch_filter_cubit.dart';
 import '../../core/connectivity/connectivity_cubit.dart';
 import '../../core/connectivity/connectivity_state.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme/app_colors.dart';
-import '../../data/models/user_role.dart';
+import '../../data/models/user_model.dart';
 import '../../di/injection.dart';
 import '../../router/route_paths.dart';
 import '../shared/app_logo.dart';
@@ -42,9 +43,7 @@ class AppShell extends StatelessWidget {
                 children: [
                   _TopBar(
                     isOnline: conn.isOnline,
-                    userName: user.name,
-                    role: user.role,
-                    branchName: user.branchName ?? '—',
+                    user: user,
                     onSync: conn.isOnline
                         ? () => getIt<SyncBloc>().add(const SyncEvent())
                         : null,
@@ -109,6 +108,19 @@ class _NavRail extends StatelessWidget {
     for (var i = 0; i < destinations.length; i++) {
       final path = destinations[i].path;
       if (location == path || location.startsWith('$path/')) return i;
+      if (destinations[i].routeKey == 'customers' &&
+          location.startsWith(RoutePaths.invoices)) {
+        return i;
+      }
+      if (destinations[i].routeKey == 'branches' &&
+          (location.startsWith(RoutePaths.transfers) ||
+              location.startsWith(RoutePaths.branchFinance))) {
+        return i;
+      }
+      if (destinations[i].routeKey == 'parts' &&
+          location.startsWith(RoutePaths.inventory)) {
+        return i;
+      }
     }
     return 0;
   }
@@ -250,24 +262,34 @@ class _NavItem extends StatelessWidget {
   }
 }
 
-class _TopBar extends StatelessWidget {
+class _TopBar extends StatefulWidget {
   const _TopBar({
     required this.isOnline,
-    required this.userName,
-    required this.role,
-    required this.branchName,
+    required this.user,
     this.onSync,
   });
 
   final bool isOnline;
-  final String userName;
-  final UserRole role;
-  final String branchName;
+  final UserModel user;
   final VoidCallback? onSync;
+
+  @override
+  State<_TopBar> createState() => _TopBarState();
+}
+
+class _TopBarState extends State<_TopBar> {
+  @override
+  void initState() {
+    super.initState();
+    if (widget.user.canSelectBranch) {
+      context.read<BranchFilterCubit>().loadBranches();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final user = widget.user;
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -309,13 +331,23 @@ class _TopBar extends StatelessWidget {
                   ],
                 ),
                 StatusChip(
-                  label: isOnline ? l10n.online : l10n.offline,
-                  variant: isOnline
+                  label: widget.isOnline ? l10n.online : l10n.offline,
+                  variant: widget.isOnline
                       ? StatusChipVariant.success
                       : StatusChipVariant.warning,
                 ),
-                _InfoChip(icon: Icons.store, label: branchName),
-                _InfoChip(icon: Icons.person, label: '$userName · ${role.name}'),
+                if (user.canSelectBranch)
+                  const _AdminBranchFilter()
+                else if (user.branchName != null &&
+                    user.branchName!.isNotEmpty)
+                  _InfoChip(
+                    icon: Icons.store,
+                    label: '${l10n.branch}: ${user.branchName}',
+                  ),
+                _InfoChip(
+                  icon: Icons.person,
+                  label: '${user.name} · ${user.role.name}',
+                ),
               ],
             ),
           ),
@@ -323,9 +355,9 @@ class _TopBar extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             textDirection: Directionality.of(context),
             children: [
-              if (onSync != null)
+              if (widget.onSync != null)
                 FilledButton.tonalIcon(
-                  onPressed: onSync,
+                  onPressed: widget.onSync,
                   style: FilledButton.styleFrom(
                     backgroundColor: AppColors.onPrimary.withValues(alpha: 0.15),
                     foregroundColor: AppColors.onPrimary,
@@ -333,7 +365,7 @@ class _TopBar extends StatelessWidget {
                   icon: const Icon(Icons.sync, size: 18),
                   label: Text(l10n.sync),
                 ),
-              if (onSync != null) const SizedBox(width: 8),
+              if (widget.onSync != null) const SizedBox(width: 8),
               IconButton(
                 tooltip: l10n.settingsTitle,
                 onPressed: () => context.go(RoutePaths.settings),
@@ -346,6 +378,82 @@ class _TopBar extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _AdminBranchFilter extends StatelessWidget {
+  const _AdminBranchFilter();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+
+    return BlocBuilder<BranchFilterCubit, BranchFilterState>(
+      builder: (context, filter) {
+        if (filter.isFiltered) {
+          final selectedName = filter.branchNameFor(filter.selectedBranchId);
+          return InputChip(
+            avatar: const Icon(Icons.filter_alt, size: 16),
+            label: Text(
+              selectedName != null
+                  ? '${l10n.branchFilterLabel}: $selectedName'
+                  : l10n.branchFilterLabel,
+            ),
+            deleteIcon: const Icon(Icons.close, size: 16),
+            onDeleted: () =>
+                context.read<BranchFilterCubit>().clearFilter(),
+            labelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.onPrimary,
+                ),
+            backgroundColor: AppColors.onPrimary.withValues(alpha: 0.12),
+            deleteIconColor: AppColors.onPrimary,
+            side: BorderSide.none,
+          );
+        }
+
+        final dropdownValue = filter.selectedBranchId != null &&
+                filter.branches.any((b) => b.id == filter.selectedBranchId)
+            ? filter.selectedBranchId
+            : null;
+
+        return Container(
+          constraints: const BoxConstraints(maxWidth: 220),
+          padding: const EdgeInsetsDirectional.symmetric(horizontal: 8),
+          decoration: BoxDecoration(
+            color: AppColors.onPrimary.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: DropdownButtonHideUnderline(
+            child: DropdownButton<String?>(
+              value: dropdownValue,
+              isDense: true,
+              icon: Icon(
+                Icons.arrow_drop_down,
+                color: AppColors.onPrimary.withValues(alpha: 0.9),
+              ),
+              dropdownColor: AppColors.primary,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: AppColors.onPrimary,
+                  ),
+              items: [
+                DropdownMenuItem<String?>(
+                  value: null,
+                  child: Text(l10n.branchFilterAll),
+                ),
+                for (final b in filter.branches)
+                  DropdownMenuItem<String?>(
+                    value: b.id,
+                    child: Text(b.name, overflow: TextOverflow.ellipsis),
+                  ),
+              ],
+              onChanged: filter.loading
+                  ? null
+                  : (id) => context.read<BranchFilterCubit>().selectBranch(id),
+            ),
+          ),
+        );
+      },
     );
   }
 }

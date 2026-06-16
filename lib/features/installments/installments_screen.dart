@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -5,13 +6,17 @@ import '../../core/auth/auth_cubit.dart';
 import '../../core/auth/role_permissions.dart';
 import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
+import '../../core/logging/app_logger.dart';
+import '../../data/models/supplier_installment_model.dart';
 import '../../data/models/user_role.dart';
 import '../../data/repositories/installment_repository.dart';
 import '../../di/injection.dart';
+import '../../core/events/app_refresh_bus.dart';
 import '../shared/entity_list_tile.dart';
 import '../shared/loading_error.dart';
 import '../shared/page_header.dart';
 import '../shared/status_chip.dart';
+import 'pay_installment_dialog.dart';
 
 class InstallmentsScreen extends StatefulWidget {
   const InstallmentsScreen({super.key});
@@ -21,14 +26,27 @@ class InstallmentsScreen extends StatefulWidget {
 }
 
 class _InstallmentsScreenState extends State<InstallmentsScreen> {
-  List<Map<String, dynamic>>? _items;
+  List<SupplierInstallmentModel>? _items;
   String? _error;
   bool _loading = true;
   bool _overdueOnly = false;
+  String? _payingId;
 
   @override
   void initState() {
     super.initState();
+    getIt<AppRefreshBus>().addListener(_onAppRefresh);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    getIt<AppRefreshBus>().removeListener(_onAppRefresh);
+    super.dispose();
+  }
+
+  void _onAppRefresh(AppRefreshKind kind) {
+    if (!mounted || kind != AppRefreshKind.branchFilter) return;
     _load();
   }
 
@@ -40,15 +58,82 @@ class _InstallmentsScreenState extends State<InstallmentsScreen> {
     try {
       final repo = getIt<InstallmentRepository>();
       final items = _overdueOnly ? await repo.overdue() : await repo.list();
+      for (final inst in items) {
+        AppLogger.action('installments.row', {
+          'id': inst.id,
+          'isPaid': inst.isPaid,
+          'amount': inst.amount,
+          'amountPaid': inst.amountPaid,
+          'balanceDue': inst.remainingBalance,
+        });
+      }
+      if (!mounted) return;
       setState(() {
         _items = items;
         _loading = false;
       });
-    } catch (e) {
+    } catch (e, st) {
+      AppLogger.error('installments.load.failed', e, st);
+      if (!mounted) return;
       setState(() {
-        _error = e.toString();
+        _error = e is DioException ? AppLogger.dioMessage(e) : e.toString();
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _payInstallment(SupplierInstallmentModel inst) async {
+    final l10n = context.l10n;
+    if (!inst.canPay) {
+      AppLogger.warning('installments.pay.skip.alreadyPaid');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.installmentAlreadyPaid)),
+      );
+      return;
+    }
+
+    final result = await PayInstallmentDialog.show(context, inst);
+    if (result == null || !mounted) return;
+
+    AppLogger.action('installments.pay.submit', {
+      'id': inst.id,
+      'payFullBalance': result.payFullBalance,
+      'amount': result.amount,
+    });
+
+    setState(() => _payingId = inst.id);
+    try {
+      await getIt<InstallmentRepository>().pay(
+        inst.id,
+        paymentMethod: result.paymentMethod,
+        amount: result.payFullBalance ? null : result.amount,
+        notes: result.notes,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.installmentPaidSuccess),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+      await _load();
+      getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
+    } on DioException catch (e, st) {
+      AppLogger.error('installments.pay.failed', e, st);
+      if (!mounted) return;
+      if (e.response?.statusCode == 422 &&
+          AppLogger.apiResponseMessageContains(e, 'already paid')) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.installmentAlreadyPaid)),
+        );
+        await _load();
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLogger.dioMessage(e))),
+      );
+    } finally {
+      if (mounted) setState(() => _payingId = null);
     }
   }
 
@@ -84,28 +169,56 @@ class _InstallmentsScreenState extends State<InstallmentsScreen> {
                       itemCount: _items!.length,
                       emptyMessage: l10n.noData,
                       itemBuilder: (context, i) {
-                        final item = _items![i];
-                        final id = item['id'] as String;
-                        final status = item['status'] as String? ?? '';
-                        final amount = item['amount'];
+                        final inst = _items![i];
+                        final isBusy = _payingId == inst.id;
+                        final poLabel = inst.purchaseOrderId != null &&
+                                inst.purchaseOrderId!.length > 8
+                            ? inst.purchaseOrderId!.substring(0, 8)
+                            : inst.purchaseOrderId;
+                        final balance = inst.remainingBalance;
+                        final titleMoney = inst.isPaid
+                            ? formatMoney(context, inst.amount)
+                            : formatMoney(context, balance);
+                        final subtitleParts = <String>[
+                          if (inst.supplierName != null) inst.supplierName!,
+                          if (poLabel != null) '${l10n.purchaseOrder} $poLabel',
+                          if (inst.installmentNo > 0)
+                            '#${inst.installmentNo}',
+                          l10n.dueDate(inst.dueDate ?? '—'),
+                          if (!inst.isPaid && inst.amountPaid > 0)
+                            '${l10n.installmentAlreadyPaidAmount}: ${formatMoney(context, inst.amountPaid)}',
+                        ];
                         return EntityListTile(
-                          title: formatMoney(context, amount is num ? amount : null),
-                          subtitle: l10n.dueDate('${item['due_date']}'),
+                          title: titleMoney,
+                          subtitle: subtitleParts.join(' · '),
                           leading: const Icon(Icons.payments_outlined),
-                          trailing: canPay && status != 'paid'
-                              ? FilledButton(
-                                  onPressed: () async {
-                                    await getIt<InstallmentRepository>().pay(id);
-                                    await _load();
-                                  },
-                                  child: Text(l10n.pay),
+                          trailing: inst.isPaid
+                              ? StatusChip(
+                                  label: l10n.statusPaid,
+                                  variant: StatusChipVariant.success,
                                 )
-                              : StatusChip(
-                                  label: localizeApiStatus(context, status),
-                                  variant: status == 'paid'
-                                      ? StatusChipVariant.success
-                                      : StatusChipVariant.warning,
-                                ),
+                              : canPay && inst.canPay
+                                  ? FilledButton(
+                                      onPressed: isBusy
+                                          ? null
+                                          : () => _payInstallment(inst),
+                                      child: isBusy
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : Text(l10n.pay),
+                                    )
+                                  : StatusChip(
+                                      label: localizeApiStatus(
+                                        context,
+                                        inst.status,
+                                      ),
+                                      variant: StatusChipVariant.warning,
+                                    ),
                         );
                       },
                     ),

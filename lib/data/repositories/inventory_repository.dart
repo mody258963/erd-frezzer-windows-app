@@ -24,12 +24,20 @@ class InventoryRepository {
   }
 
   Future<List<StockModel>> byBranch(String branchId) async {
-    final response = await _dio.get<dynamic>('/inventory/$branchId');
+    final response = await _dio.get<dynamic>(
+      '/inventory/$branchId',
+      queryParameters: {'branch_id': branchId},
+    );
     return parseList(response.data, StockModel.fromJson);
   }
 
-  Future<List<Map<String, dynamic>>> lowStock() async {
-    final response = await _dio.get<dynamic>('/inventory/low-stock');
+  Future<List<Map<String, dynamic>>> lowStock({String? branchId}) async {
+    final response = await _dio.get<dynamic>(
+      '/inventory/low-stock',
+      queryParameters: {
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
+      },
+    );
     return parseList(response.data, (j) => j);
   }
 

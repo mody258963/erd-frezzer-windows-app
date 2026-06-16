@@ -1,34 +1,60 @@
 import 'package:dio/dio.dart';
 
 import '../../core/api/api_utils.dart';
+import '../../core/utils/balance_parse.dart';
+import '../models/linked_balance_model.dart';
+import '../models/supplier_model.dart';
 
 class SupplierRepository {
   SupplierRepository(this._dio);
   final Dio _dio;
 
-  Future<List<Map<String, dynamic>>> list() async {
-    final r = await _dio.get<dynamic>('/suppliers');
-    return parseList(r.data, (j) => j);
+  Future<List<SupplierModel>> list({String? branchId}) async {
+    final r = await _dio.get<dynamic>(
+      '/suppliers',
+      queryParameters: {
+        if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
+      },
+    );
+    return parseList(r.data, SupplierModel.fromJson);
   }
 
-  Future<Map<String, dynamic>> get(String id) async {
+  Future<SupplierModel> get(String id) async {
     final r = await _dio.get<dynamic>('/suppliers/$id');
-    return parseObject(r.data);
+    return SupplierModel.fromJson(parseObject(r.data));
   }
 
-  Future<Map<String, dynamic>> debt(String id) async {
+  Future<double> debt(String id) async {
     final r = await _dio.get<dynamic>('/suppliers/$id/debt');
-    return parseObject(r.data);
+    return parseOutstandingBalance(parseObject(r.data));
   }
 
-  Future<Map<String, dynamic>> create(Map<String, dynamic> body) async {
-    final r = await _dio.post<dynamic>('/suppliers', data: body);
-    return parseObject(r.data);
+  Future<LinkedBalanceModel> linkedBalance(String id) async {
+    final r = await _dio.get<dynamic>('/suppliers/$id/linked-balance');
+    return LinkedBalanceModel.fromJson(parseObject(r.data));
   }
 
-  Future<Map<String, dynamic>> update(String id, Map<String, dynamic> body) async {
+  Future<SupplierModel> create(
+    Map<String, dynamic> body, {
+    String? branchId,
+  }) async {
+    final bid = branchId?.trim();
+    final payload = {
+      ...body,
+      if (bid != null && bid.isNotEmpty) 'branch_id': bid,
+    };
+    final r = await _dio.post<dynamic>(
+      '/suppliers',
+      queryParameters:
+          bid != null && bid.isNotEmpty ? {'branch_id': bid} : null,
+      data: payload,
+    );
+    return SupplierModel.fromJson(parseObject(r.data));
+  }
+
+  Future<SupplierModel> update(String id, Map<String, dynamic> body) async {
     final r = await _dio.put<dynamic>('/suppliers/$id', data: body);
-    return parseObject(r.data);
+    return SupplierModel.fromJson(parseObject(r.data));
   }
 
   Future<void> delete(String id) async {

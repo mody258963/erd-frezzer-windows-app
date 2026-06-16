@@ -15,6 +15,8 @@ class UserModel {
     this.branchId,
     this.isActive = true,
     this.branchName,
+    this.canSelectBranch = false,
+    this.accessibleBranchIds,
   });
 
   final String id;
@@ -24,6 +26,10 @@ class UserModel {
   final String? branchId;
   final bool isActive;
   final String? branchName;
+  /// From `can_select_branch` — show branch picker (admin).
+  final bool canSelectBranch;
+  /// `null` = all branches (admin); otherwise only these UUIDs.
+  final List<String>? accessibleBranchIds;
 
   /// Reads branch UUID from `branch_id` or nested `branch.id` (API may send either).
   static String? parseBranchId(Map<String, dynamic> json) {
@@ -79,8 +85,25 @@ class UserModel {
       branchId: branchId,
       isActive: json['is_active'] as bool? ?? true,
       branchName: branchName,
+      canSelectBranch: json['can_select_branch'] as bool? ?? false,
+      accessibleBranchIds: _parseAccessibleBranchIds(json['accessible_branch_ids']),
     );
   }
+
+  static List<String>? _parseAccessibleBranchIds(dynamic raw) {
+    if (raw == null) return null;
+    if (raw is! List) return null;
+    final ids = raw.map((e) => '$e').where((s) => s.isNotEmpty).toList();
+    return ids.isEmpty ? null : ids;
+  }
+
+  /// Branches the user may use in dropdowns (`null` = unrestricted).
+  List<String>? get allowedBranchIdFilter => accessibleBranchIds;
+
+  bool get isAdmin => role.name == 'admin';
+
+  /// Non-admin users locked to [branchId]; branch picker must stay hidden.
+  bool get isBranchLocked => !canSelectBranch && branchId != null;
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -89,6 +112,8 @@ class UserModel {
         'role': role.name,
         'branch_id': branchId,
         'is_active': isActive,
+        'can_select_branch': canSelectBranch,
+        'accessible_branch_ids': accessibleBranchIds,
         if (branchName != null)
           'branch': {'id': branchId, 'name': branchName},
       };

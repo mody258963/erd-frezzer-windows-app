@@ -4,6 +4,7 @@ class Parts extends Table {
   TextColumn get id => text()();
   TextColumn get code => text()();
   TextColumn get name => text()();
+  TextColumn get unit => text().nullable()();
   RealColumn get sellPrice => real()();
   TextColumn get imageUrl => text().nullable()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
@@ -16,7 +17,7 @@ class Parts extends Table {
 class StockRows extends Table {
   TextColumn get partId => text()();
   TextColumn get branchId => text()();
-  IntColumn get quantity => integer()();
+  RealColumn get quantity => real()();
 
   @override
   Set<Column> get primaryKey => {partId, branchId};
@@ -29,6 +30,8 @@ class Customers extends Table {
   RealColumn get creditLimit => real().withDefault(const Constant(0))();
   RealColumn get outstandingBalance =>
       real().withDefault(const Constant(0))();
+  TextColumn get settlementCycle => text().nullable()();
+  DateTimeColumn get lastSettledAt => dateTime().nullable()();
   BoolColumn get isActive => boolean().withDefault(const Constant(true))();
   DateTimeColumn get syncedAt => dateTime().nullable()();
 
@@ -60,7 +63,7 @@ class PendingInvoiceItems extends Table {
   TextColumn get partId => text()();
   TextColumn get partCode => text()();
   TextColumn get partName => text()();
-  IntColumn get quantity => integer()();
+  RealColumn get quantity => real()();
   RealColumn get unitPrice => real()();
   RealColumn get lineTotal => real()();
 }

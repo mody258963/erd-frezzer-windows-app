@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../core/auth/auth_cubit.dart';
+import '../../core/catalog/catalog_branch.dart';
 import '../../core/connectivity/connectivity_cubit.dart';
 import '../local/app_database.dart';
 import '../repositories/catalog_sync_repository.dart';
@@ -40,7 +41,7 @@ class SyncWorker {
       return const SyncResult();
     }
     final user = _authCubit.state.user;
-    final branchId = user?.branchId;
+    final branchId = await resolveCatalogBranchId(user);
     if (user == null || branchId == null) {
       return const SyncResult();
     }

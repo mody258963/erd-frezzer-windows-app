@@ -4,10 +4,15 @@ import '../../data/models/branch_model.dart';
 import '../../data/repositories/branch_repository.dart';
 import '../../di/injection.dart';
 
-/// Active branches from the API.
-Future<List<BranchModel>> loadActiveBranches() async {
-  final all = await getIt<BranchRepository>().list();
-  return all.where((b) => b.isActive).toList();
+/// Active branches from `GET /branches/active`, optionally scoped to the user.
+Future<List<BranchModel>> loadActiveBranches({
+  List<String>? allowedIds,
+}) async {
+  final all = await getIt<BranchRepository>().listActive();
+  final active = all.where((b) => b.isActive).toList();
+  if (allowedIds == null) return active;
+  final set = allowedIds.toSet();
+  return active.where((b) => set.contains(b.id)).toList();
 }
 
 Map<String, String> branchNameById(Iterable<BranchModel> branches) {

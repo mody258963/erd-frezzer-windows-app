@@ -21,6 +21,11 @@ class TransferRepository {
     return parseObject(r.data);
   }
 
+  Future<Map<String, dynamic>> update(String id, Map<String, dynamic> body) async {
+    final r = await _dio.patch<dynamic>('/transfers/$id', data: body);
+    return parseObject(r.data);
+  }
+
   Future<Map<String, dynamic>> complete(
     String id, {
     String valuation = 'cost',

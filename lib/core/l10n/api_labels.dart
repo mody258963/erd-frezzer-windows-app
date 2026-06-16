@@ -1,4 +1,5 @@
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
 
 import 'l10n_extension.dart';
 
@@ -36,6 +37,17 @@ String localizeCustomerType(BuildContext context, String? type) {
   return localizePaymentType(context, type);
 }
 
+String localizeSettlementCycle(BuildContext context, String? cycle) {
+  final c = (cycle ?? '').toLowerCase();
+  final l = context.l10n;
+  return switch (c) {
+    'daily' => l.settlementCycleDaily,
+    'weekly' => l.settlementCycleWeekly,
+    '' => '—',
+    _ => cycle ?? '—',
+  };
+}
+
 String localizeReturnType(BuildContext context, String? type) {
   final t = (type ?? '').toLowerCase();
   final l = context.l10n;
@@ -44,6 +56,17 @@ String localizeReturnType(BuildContext context, String? type) {
     'supplier_return' => l.returnTypeSupplier,
     '' => '—',
     _ => type ?? '—',
+  };
+}
+
+String localizeInvoiceReturnStatus(BuildContext context, String? status) {
+  final s = (status ?? '').trim().toLowerCase();
+  final l = context.l10n;
+  return switch (s) {
+    'returned' => l.invoiceReturnStatusReturned,
+    'partial' || 'partially_returned' => l.invoiceReturnStatusPartial,
+    '' => '—',
+    _ => status ?? '—',
   };
 }
 
@@ -110,6 +133,17 @@ String formatMoney(BuildContext context, num? value) {
   return '${value.toStringAsFixed(2)} ${context.l10n.currencyEgp}';
 }
 
+String formatApiDateTime(BuildContext context, String? iso) {
+  if (iso == null || iso.isEmpty) return '—';
+  try {
+    final dt = DateTime.parse(iso).toLocal();
+    final locale = Localizations.localeOf(context).toString();
+    return DateFormat.yMMMd(locale).add_jm().format(dt);
+  } catch (_) {
+    return iso;
+  }
+}
+
 /// Maps POS bloc error codes to localized messages.
 String localizePosError(BuildContext context, String? error) {
   if (error == null || error.isEmpty) return '';
@@ -124,6 +158,7 @@ String localizePosError(BuildContext context, String? error) {
     'credit_unavailable' => l.creditSalesUnavailableOffline,
     'insufficient_stock_generic' => l.insufficientStock,
     'invalid_line_price' => l.invalidLinePrice,
+    'insufficient_payment' => l.amountReceivedTooLow,
     _ => error,
   };
 }

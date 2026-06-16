@@ -161,7 +161,7 @@ abstract class AppLocalizations {
   /// No description provided for @offlineBanner.
   ///
   /// In en, this message translates to:
-  /// **'Offline — only new sales can be saved locally'**
+  /// **'Offline â€” only new sales can be saved locally'**
   String get offlineBanner;
 
   /// No description provided for @dismiss.
@@ -217,6 +217,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Stock'**
   String get navStock;
+
+  /// No description provided for @navPartsStock.
+  ///
+  /// In en, this message translates to:
+  /// **'Parts & stock'**
+  String get navPartsStock;
 
   /// No description provided for @navCustomers.
   ///
@@ -311,7 +317,7 @@ abstract class AppLocalizations {
   /// No description provided for @dashboardSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Your business at a glance — sales, stock, and money'**
+  /// **'Your business at a glance â€” sales, stock, and money'**
   String get dashboardSubtitle;
 
   /// No description provided for @dashboardNeedsAttention.
@@ -440,10 +446,16 @@ abstract class AppLocalizations {
   /// **'Data sync completed'**
   String get activitySyncCompleted;
 
+  /// No description provided for @activityOwnerCashOut.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner cash out recorded'**
+  String get activityOwnerCashOut;
+
   /// No description provided for @activityGeneric.
   ///
   /// In en, this message translates to:
-  /// **'{action} · {entity}'**
+  /// **'{action} Â· {entity}'**
   String activityGeneric(Object action, Object entity);
 
   /// No description provided for @entityInvoice.
@@ -635,13 +647,13 @@ abstract class AppLocalizations {
   /// No description provided for @loadingDashboard.
   ///
   /// In en, this message translates to:
-  /// **'Loading dashboard…'**
+  /// **'Loading dashboardâ€¦'**
   String get loadingDashboard;
 
   /// No description provided for @posTitle.
   ///
   /// In en, this message translates to:
-  /// **'POS — New sale'**
+  /// **'POS â€” New sale'**
   String get posTitle;
 
   /// No description provided for @posSubtitle.
@@ -649,6 +661,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search parts or scan a barcode to add to cart'**
   String get posSubtitle;
+
+  /// No description provided for @printDaySales.
+  ///
+  /// In en, this message translates to:
+  /// **'Print day sales'**
+  String get printDaySales;
+
+  /// No description provided for @printDaySalesReport.
+  ///
+  /// In en, this message translates to:
+  /// **'Day sales report'**
+  String get printDaySalesReport;
+
+  /// No description provided for @noDaySales.
+  ///
+  /// In en, this message translates to:
+  /// **'No sales today to print'**
+  String get noDaySales;
+
+  /// No description provided for @daySalesPrinted.
+  ///
+  /// In en, this message translates to:
+  /// **'Day sales report sent to printer'**
+  String get daySalesPrinted;
 
   /// No description provided for @searchScanBarcode.
   ///
@@ -698,6 +734,12 @@ abstract class AppLocalizations {
   /// **'Cart is empty'**
   String get cartEmpty;
 
+  /// No description provided for @removeFromCart.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove item'**
+  String get removeFromCart;
+
   /// No description provided for @subtotal.
   ///
   /// In en, this message translates to:
@@ -722,10 +764,28 @@ abstract class AppLocalizations {
   /// **'Complete sale'**
   String get completeSale;
 
+  /// No description provided for @amountReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount received'**
+  String get amountReceived;
+
+  /// No description provided for @changeDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Change due'**
+  String get changeDue;
+
+  /// No description provided for @amountReceivedTooLow.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount received must be at least the invoice total'**
+  String get amountReceivedTooLow;
+
   /// No description provided for @processing.
   ///
   /// In en, this message translates to:
-  /// **'Processing…'**
+  /// **'Processingâ€¦'**
   String get processing;
 
   /// No description provided for @invalidLinePrice.
@@ -767,7 +827,7 @@ abstract class AppLocalizations {
   /// No description provided for @apiHostHint.
   ///
   /// In en, this message translates to:
-  /// **'Host only — /api/v1 is appended automatically'**
+  /// **'Host only â€” /api/v1 is appended automatically'**
   String get apiHostHint;
 
   /// No description provided for @apiBaseUrl.
@@ -860,6 +920,12 @@ abstract class AppLocalizations {
   /// **'New customer'**
   String get newCustomer;
 
+  /// No description provided for @customerBranchRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a branch before adding a customer'**
+  String get customerBranchRequired;
+
   /// No description provided for @inventoryTitle.
   ///
   /// In en, this message translates to:
@@ -905,7 +971,7 @@ abstract class AppLocalizations {
   /// No description provided for @printing.
   ///
   /// In en, this message translates to:
-  /// **'Printing…'**
+  /// **'Printingâ€¦'**
   String get printing;
 
   /// No description provided for @printSuccess.
@@ -1105,6 +1171,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Suppliers'**
   String get suppliersTitle;
+
+  /// No description provided for @suppliersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Suppliers registered in the selected branch only'**
+  String get suppliersSubtitle;
+
+  /// No description provided for @supplierBranchRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a branch before adding a supplier'**
+  String get supplierBranchRequired;
+
+  /// No description provided for @supplierBranchPoHint.
+  ///
+  /// In en, this message translates to:
+  /// **'No suppliers in this branch yet'**
+  String get supplierBranchPoHint;
 
   /// No description provided for @newSupplier.
   ///
@@ -1427,7 +1511,7 @@ abstract class AppLocalizations {
   /// No description provided for @customerRowSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'{type} · {balance}'**
+  /// **'{type} Â· {balance}'**
   String customerRowSubtitle(Object type, Object balance);
 
   /// No description provided for @customerSaved.
@@ -1435,6 +1519,600 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Customer saved'**
   String get customerSaved;
+
+  /// No description provided for @contactInfo.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact'**
+  String get contactInfo;
+
+  /// No description provided for @purchaseHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchase history'**
+  String get purchaseHistory;
+
+  /// No description provided for @purchaseHistoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Parts this customer bought â€” when and at which branch.'**
+  String get purchaseHistoryHint;
+
+  /// No description provided for @noPurchaseHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No purchases recorded for this customer yet.'**
+  String get noPurchaseHistory;
+
+  /// No description provided for @totalPurchases.
+  ///
+  /// In en, this message translates to:
+  /// **'Total purchases'**
+  String get totalPurchases;
+
+  /// No description provided for @tapRowForInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a row to open the full invoice.'**
+  String get tapRowForInvoice;
+
+  /// No description provided for @customerViewThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get customerViewThisWeek;
+
+  /// No description provided for @customerViewHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled / history'**
+  String get customerViewHistory;
+
+  /// No description provided for @customerThisWeekHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Open work for {range} â€” unsettled invoices only.'**
+  String customerThisWeekHint(Object range);
+
+  /// No description provided for @customerHistoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled invoices and purchases from earlier weeks.'**
+  String get customerHistoryHint;
+
+  /// No description provided for @customerOpenWork.
+  ///
+  /// In en, this message translates to:
+  /// **'This week\'s work'**
+  String get customerOpenWork;
+
+  /// No description provided for @customerSettledHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled & history'**
+  String get customerSettledHistory;
+
+  /// No description provided for @customerSettledHistoryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Invoices paid via settlement or from before this week.'**
+  String get customerSettledHistoryHint;
+
+  /// No description provided for @customerNoOpenWorkThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'No open invoices this week â€” all settled or none sold yet.'**
+  String get customerNoOpenWorkThisWeek;
+
+  /// No description provided for @customerNoSettledHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'No settled or older invoices yet.'**
+  String get customerNoSettledHistory;
+
+  /// No description provided for @customerWeekRange.
+  ///
+  /// In en, this message translates to:
+  /// **'{from} â€“ {to}'**
+  String customerWeekRange(Object from, Object to);
+
+  /// No description provided for @customerNoWeekInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'No invoices this week to print.'**
+  String get customerNoWeekInvoices;
+
+  /// No description provided for @printWeekInvoices.
+  ///
+  /// In en, this message translates to:
+  /// **'Print all (one job)'**
+  String get printWeekInvoices;
+
+  /// No description provided for @weekInvoicesPrinted.
+  ///
+  /// In en, this message translates to:
+  /// **'Printed {count} invoice(s)'**
+  String weekInvoicesPrinted(Object count);
+
+  /// No description provided for @settled.
+  ///
+  /// In en, this message translates to:
+  /// **'Settled'**
+  String get settled;
+
+  /// No description provided for @reportThisWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get reportThisWeek;
+
+  /// No description provided for @collectPaymentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect payment'**
+  String get collectPaymentTitle;
+
+  /// No description provided for @collectPaymentConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Collect'**
+  String get collectPaymentConfirm;
+
+  /// No description provided for @collectPaymentSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment recorded'**
+  String get collectPaymentSuccess;
+
+  /// No description provided for @customerNoBalanceDue.
+  ///
+  /// In en, this message translates to:
+  /// **'No balance due'**
+  String get customerNoBalanceDue;
+
+  /// No description provided for @customerPayAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be between 0.01 and {max}'**
+  String customerPayAmountInvalid(Object max);
+
+  /// No description provided for @customerPaymentHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment history'**
+  String get customerPaymentHistory;
+
+  /// No description provided for @unpaidInvoicesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid invoices'**
+  String get unpaidInvoicesTitle;
+
+  /// No description provided for @unpaidInvoicesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial payments apply to oldest invoices first.'**
+  String get unpaidInvoicesHint;
+
+  /// No description provided for @invoiceBalanceSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid {paid} Â· Due {due}'**
+  String invoiceBalanceSubtitle(Object paid, Object due);
+
+  /// No description provided for @refundProfitImpact.
+  ///
+  /// In en, this message translates to:
+  /// **'Return margin impact'**
+  String get refundProfitImpact;
+
+  /// No description provided for @linkToSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Link to supplier'**
+  String get linkToSupplier;
+
+  /// No description provided for @noLinkedSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'No linked supplier'**
+  String get noLinkedSupplier;
+
+  /// No description provided for @linkedBalanceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Net balance (linked)'**
+  String get linkedBalanceTitle;
+
+  /// No description provided for @linkedNotLinkedHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Link this customer to a supplier to see net balance and offset.'**
+  String get linkedNotLinkedHint;
+
+  /// No description provided for @linkedToSupplier.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked supplier: {name}'**
+  String linkedToSupplier(Object name);
+
+  /// No description provided for @linkedToCustomer.
+  ///
+  /// In en, this message translates to:
+  /// **'Linked customer: {name}'**
+  String linkedToCustomer(Object name);
+
+  /// No description provided for @linkedCustomerReceivable.
+  ///
+  /// In en, this message translates to:
+  /// **'They owe you'**
+  String get linkedCustomerReceivable;
+
+  /// No description provided for @linkedSupplierPayable.
+  ///
+  /// In en, this message translates to:
+  /// **'You owe them'**
+  String get linkedSupplierPayable;
+
+  /// No description provided for @linkedNetBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Net balance'**
+  String get linkedNetBalance;
+
+  /// No description provided for @netTheyOweUs.
+  ///
+  /// In en, this message translates to:
+  /// **'For us {amount}'**
+  String netTheyOweUs(Object amount);
+
+  /// No description provided for @netWeOweThem.
+  ///
+  /// In en, this message translates to:
+  /// **'On us {amount}'**
+  String netWeOweThem(Object amount);
+
+  /// No description provided for @netBalanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Balanced'**
+  String get netBalanced;
+
+  /// No description provided for @offsetSupplierTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset / contra settlement'**
+  String get offsetSupplierTitle;
+
+  /// No description provided for @offsetSupplierAction.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset (Ù…Ù‚Ø§ØµØ©)'**
+  String get offsetSupplierAction;
+
+  /// No description provided for @offsetAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset amount'**
+  String get offsetAmountLabel;
+
+  /// No description provided for @offsetFullAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset full {amount}'**
+  String offsetFullAmount(Object amount);
+
+  /// No description provided for @offsetAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be between 0.01 and {max}'**
+  String offsetAmountInvalid(Object max);
+
+  /// No description provided for @offsetNotAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to offset'**
+  String get offsetNotAvailable;
+
+  /// No description provided for @offsetConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset'**
+  String get offsetConfirm;
+
+  /// No description provided for @offsetSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Offset recorded'**
+  String get offsetSuccess;
+
+  /// No description provided for @purchaseAlreadyReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'This order was already received.'**
+  String get purchaseAlreadyReceived;
+
+  /// No description provided for @installmentAlreadyPaid.
+  ///
+  /// In en, this message translates to:
+  /// **'Installment already paid.'**
+  String get installmentAlreadyPaid;
+
+  /// No description provided for @installmentPaidSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Installment paid.'**
+  String get installmentPaidSuccess;
+
+  /// No description provided for @payInstallmentTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay installment #{no}'**
+  String payInstallmentTitle(Object no);
+
+  /// No description provided for @payInstallmentTitleGeneric.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay installment'**
+  String get payInstallmentTitleGeneric;
+
+  /// No description provided for @installmentScheduled.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get installmentScheduled;
+
+  /// No description provided for @installmentAlreadyPaidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Already paid'**
+  String get installmentAlreadyPaidAmount;
+
+  /// No description provided for @installmentBalanceDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Balance due'**
+  String get installmentBalanceDue;
+
+  /// No description provided for @payAmountLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay amount'**
+  String get payAmountLabel;
+
+  /// No description provided for @payFullBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay full balance ({amount})'**
+  String payFullBalance(Object amount);
+
+  /// No description provided for @installmentPayAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be between 0.01 and {max}'**
+  String installmentPayAmountInvalid(Object max);
+
+  /// No description provided for @returnResolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution'**
+  String get returnResolution;
+
+  /// No description provided for @resolutionRestock.
+  ///
+  /// In en, this message translates to:
+  /// **'Restock inventory'**
+  String get resolutionRestock;
+
+  /// No description provided for @resolutionCreditNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Credit note (reduce customer balance)'**
+  String get resolutionCreditNote;
+
+  /// No description provided for @resolutionRefundCash.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund cash'**
+  String get resolutionRefundCash;
+
+  /// No description provided for @resolutionReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replace item'**
+  String get resolutionReplace;
+
+  /// No description provided for @resolutionWriteoff.
+  ///
+  /// In en, this message translates to:
+  /// **'Write off (no restock)'**
+  String get resolutionWriteoff;
+
+  /// No description provided for @resolutionSupplierCredit.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier credit (reduce payables)'**
+  String get resolutionSupplierCredit;
+
+  /// No description provided for @returnDefectiveHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Defective items are not restocked. Use Write off or Refund cash so the customer gets their money back.'**
+  String get returnDefectiveHint;
+
+  /// No description provided for @returnLinesSummary.
+  ///
+  /// In en, this message translates to:
+  /// **'Return lines'**
+  String get returnLinesSummary;
+
+  /// No description provided for @returnApprovedRefresh.
+  ///
+  /// In en, this message translates to:
+  /// **'Return approved. Inventory and dashboard will refresh.'**
+  String get returnApprovedRefresh;
+
+  /// No description provided for @resolutionHintRestockOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock increases at the branch. No cash refund on the dashboard.'**
+  String get resolutionHintRestockOnly;
+
+  /// No description provided for @resolutionHintRefundOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer refund is deducted from dashboard totals.'**
+  String get resolutionHintRefundOnly;
+
+  /// No description provided for @resolutionHintRestockAndRefund.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock increases and customer refund applies (cash / credit note).'**
+  String get resolutionHintRestockAndRefund;
+
+  /// No description provided for @resolutionHintWriteoffDefective.
+  ///
+  /// In en, this message translates to:
+  /// **'Defective: no restock. Customer receives refund (unit price Ã— qty).'**
+  String get resolutionHintWriteoffDefective;
+
+  /// No description provided for @resolutionHintReplace.
+  ///
+  /// In en, this message translates to:
+  /// **'Replacement â€” no automatic stock or refund in this resolution.'**
+  String get resolutionHintReplace;
+
+  /// No description provided for @weeklyCustomerRefunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly customer refunds'**
+  String get weeklyCustomerRefunds;
+
+  /// No description provided for @weeklyNetSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly net sales'**
+  String get weeklyNetSales;
+
+  /// No description provided for @invoiceReturnStatusReturned.
+  ///
+  /// In en, this message translates to:
+  /// **'Fully returned'**
+  String get invoiceReturnStatusReturned;
+
+  /// No description provided for @invoiceReturnStatusPartial.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial return'**
+  String get invoiceReturnStatusPartial;
+
+  /// No description provided for @quantitySold.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold'**
+  String get quantitySold;
+
+  /// No description provided for @quantityAvailableForReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'Available to return'**
+  String get quantityAvailableForReturn;
+
+  /// No description provided for @quantityReturned.
+  ///
+  /// In en, this message translates to:
+  /// **'Returned'**
+  String get quantityReturned;
+
+  /// No description provided for @quantityRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Remaining'**
+  String get quantityRemaining;
+
+  /// No description provided for @returnRefundTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Refund total'**
+  String get returnRefundTotal;
+
+  /// No description provided for @reprintInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Reprint invoice'**
+  String get reprintInvoice;
+
+  /// No description provided for @returnItemsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Return items'**
+  String get returnItemsTitle;
+
+  /// No description provided for @returnQuantityExceeded.
+  ///
+  /// In en, this message translates to:
+  /// **'You can only return {available} more of this item.'**
+  String returnQuantityExceeded(Object available);
+
+  /// No description provided for @returnsOnInvoice.
+  ///
+  /// In en, this message translates to:
+  /// **'Returns on this invoice'**
+  String get returnsOnInvoice;
+
+  /// No description provided for @netAfterReturns.
+  ///
+  /// In en, this message translates to:
+  /// **'Net after returns'**
+  String get netAfterReturns;
+
+  /// No description provided for @originalTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Original total'**
+  String get originalTotal;
+
+  /// No description provided for @returnedCompleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Returned (completed)'**
+  String get returnedCompleted;
+
+  /// No description provided for @soldQtyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Sold {qty}'**
+  String soldQtyLabel(Object qty);
+
+  /// No description provided for @availableQtyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Available: {qty}'**
+  String availableQtyLabel(Object qty);
+
+  /// No description provided for @returnedQtyLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Returned: {completed} (pending {pending})'**
+  String returnedQtyLabel(Object completed, Object pending);
+
+  /// No description provided for @invoiceAlreadyReturned.
+  ///
+  /// In en, this message translates to:
+  /// **'This invoice was already returned. Choose another invoice.'**
+  String get invoiceAlreadyReturned;
+
+  /// No description provided for @invoiceReturnStatusLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Return status: {status}'**
+  String invoiceReturnStatusLabel(Object status);
+
+  /// No description provided for @noInvoicesAvailableForReturn.
+  ///
+  /// In en, this message translates to:
+  /// **'No invoices available for return (all returned or cancelled).'**
+  String get noInvoicesAvailableForReturn;
 
   /// No description provided for @branchesTitle.
   ///
@@ -1481,7 +2159,7 @@ abstract class AppLocalizations {
   /// No description provided for @invoicePickerLabel.
   ///
   /// In en, this message translates to:
-  /// **'{id} · {customer} · {total}'**
+  /// **'{id} Â· {customer} Â· {total}'**
   String invoicePickerLabel(Object id, Object customer, Object total);
 
   /// No description provided for @returnReason.
@@ -1559,7 +2237,7 @@ abstract class AppLocalizations {
   /// No description provided for @returnRowTitle.
   ///
   /// In en, this message translates to:
-  /// **'{type} — {status}'**
+  /// **'{type} â€” {status}'**
   String returnRowTitle(Object type, Object status);
 
   /// No description provided for @reason.
@@ -1607,8 +2285,86 @@ abstract class AppLocalizations {
   /// No description provided for @settlementsSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Saturday credit settlements — marks all unpaid credit invoices as paid'**
+  /// **'Collect credit customer balances — daily or weekly (Saturday) cycles'**
   String get settlementsSubtitle;
+
+  /// No description provided for @settlementsDueTab.
+  ///
+  /// In en, this message translates to:
+  /// **'Due now'**
+  String get settlementsDueTab;
+
+  /// No description provided for @settlementsHistoryTab.
+  ///
+  /// In en, this message translates to:
+  /// **'History'**
+  String get settlementsHistoryTab;
+
+  /// No description provided for @settlementsUpcomingEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No customers due for collection'**
+  String get settlementsUpcomingEmpty;
+
+  /// No description provided for @settlementsFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All due'**
+  String get settlementsFilterAll;
+
+  /// No description provided for @settlementsFilterDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get settlementsFilterDaily;
+
+  /// No description provided for @settlementsFilterWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get settlementsFilterWeekly;
+
+  /// No description provided for @settlementCycleLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Settlement cycle'**
+  String get settlementCycleLabel;
+
+  /// No description provided for @settlementCycleWeekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly (Saturday)'**
+  String get settlementCycleWeekly;
+
+  /// No description provided for @settlementCycleDaily.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily'**
+  String get settlementCycleDaily;
+
+  /// No description provided for @lastSettledAt.
+  ///
+  /// In en, this message translates to:
+  /// **'Last collected'**
+  String get lastSettledAt;
+
+  /// No description provided for @amountDue.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount due'**
+  String get amountDue;
+
+  /// No description provided for @settleAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Settle all'**
+  String get settleAll;
+
+  /// No description provided for @partialPay.
+  ///
+  /// In en, this message translates to:
+  /// **'Partial pay'**
+  String get partialPay;
 
   /// No description provided for @recordSettlement.
   ///
@@ -1685,7 +2441,7 @@ abstract class AppLocalizations {
   /// No description provided for @settlementRowSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'{date} · {amount}'**
+  /// **'{date} Â· {amount}'**
   String settlementRowSubtitle(Object date, Object amount);
 
   /// No description provided for @transfersTitle.
@@ -1727,7 +2483,7 @@ abstract class AppLocalizations {
   /// No description provided for @transferBranches.
   ///
   /// In en, this message translates to:
-  /// **'{from} → {to}'**
+  /// **'{from} â†’ {to}'**
   String transferBranches(Object from, Object to);
 
   /// No description provided for @selectBranch.
@@ -1817,7 +2573,7 @@ abstract class AppLocalizations {
   /// No description provided for @syncing.
   ///
   /// In en, this message translates to:
-  /// **'Syncing…'**
+  /// **'Syncingâ€¦'**
   String get syncing;
 
   /// No description provided for @syncNow.
@@ -1835,7 +2591,7 @@ abstract class AppLocalizations {
   /// No description provided for @pendingRowSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'{status} · {total} · {date}'**
+  /// **'{status} Â· {total} Â· {date}'**
   String pendingRowSubtitle(Object status, Object total, Object date);
 
   /// No description provided for @salesReportTitle.
@@ -1913,13 +2669,13 @@ abstract class AppLocalizations {
   /// No description provided for @reportDescSales.
   ///
   /// In en, this message translates to:
-  /// **'All sales invoices in the selected period — number, customer, payment type, and total.'**
+  /// **'All sales invoices in the selected period â€” number, customer, payment type, and total.'**
   String get reportDescSales;
 
   /// No description provided for @reportDescInventory.
   ///
   /// In en, this message translates to:
-  /// **'Current stock value: quantity × cost and × sell price per part.'**
+  /// **'Current stock value: quantity Ã— cost and Ã— sell price per part.'**
   String get reportDescInventory;
 
   /// No description provided for @reportDescCustomers.
@@ -2132,16 +2888,46 @@ abstract class AppLocalizations {
   /// **'Part saved'**
   String get partSaved;
 
+  /// No description provided for @partDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Part deleted'**
+  String get partDeleted;
+
+  /// No description provided for @confirmDeletePart.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete {name}? This cannot be undone if the part has no sales history.'**
+  String confirmDeletePart(Object name);
+
   /// No description provided for @partCreateNotAllowed.
   ///
   /// In en, this message translates to:
-  /// **'Only managers can add parts'**
+  /// **'Only admins and managers can add parts'**
   String get partCreateNotAllowed;
+
+  /// No description provided for @partAddOffline.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to the internet to add products.'**
+  String get partAddOffline;
+
+  /// No description provided for @partBranchRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a branch before adding a part'**
+  String get partBranchRequired;
+
+  /// No description provided for @openingQuantity.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening qty'**
+  String get openingQuantity;
 
   /// No description provided for @partCodeDuplicate.
   ///
   /// In en, this message translates to:
-  /// **'Part code already exists — use another code'**
+  /// **'Part code already exists â€” use another code'**
   String get partCodeDuplicate;
 
   /// No description provided for @partFillCategoryUnit.
@@ -2153,13 +2939,13 @@ abstract class AppLocalizations {
   /// No description provided for @partInvalidUnit.
   ///
   /// In en, this message translates to:
-  /// **'Invalid unit — pick from the list'**
+  /// **'Invalid unit â€” pick from the list'**
   String get partInvalidUnit;
 
   /// No description provided for @failedLoadPartMeta.
   ///
   /// In en, this message translates to:
-  /// **'Could not load categories or units — check connection'**
+  /// **'Could not load categories or units â€” check connection'**
   String get failedLoadPartMeta;
 
   /// No description provided for @partCategoriesTitle.
@@ -2201,7 +2987,7 @@ abstract class AppLocalizations {
   /// No description provided for @categoryKeyInvalid.
   ///
   /// In en, this message translates to:
-  /// **'Invalid key — use a-z, 0-9, and _'**
+  /// **'Invalid key â€” use a-z, 0-9, and _'**
   String get categoryKeyInvalid;
 
   /// No description provided for @categoryName.
@@ -2273,7 +3059,7 @@ abstract class AppLocalizations {
   /// No description provided for @partImageInvalidType.
   ///
   /// In en, this message translates to:
-  /// **'Unsupported file type — use JPG, PNG, or WebP only'**
+  /// **'Unsupported file type â€” use JPG, PNG, or WebP only'**
   String get partImageInvalidType;
 
   /// No description provided for @unitPc.
@@ -2345,8 +3131,8 @@ abstract class AppLocalizations {
   /// No description provided for @partRowSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'{category} · {sell} · {min}'**
-  String partRowSubtitle(Object category, Object sell, Object min);
+  /// **'{category} · sell {sell} · cost {cost} · min {min}'**
+  String partRowSubtitle(Object category, Object sell, Object cost, Object min);
 
   /// No description provided for @adjustStock.
   ///
@@ -2423,13 +3209,13 @@ abstract class AppLocalizations {
   /// No description provided for @quantityTimes.
   ///
   /// In en, this message translates to:
-  /// **'×{qty}'**
+  /// **'Ã—{qty}'**
   String quantityTimes(Object qty);
 
   /// No description provided for @invoiceRowSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'{payment} · {date}'**
+  /// **'{payment} Â· {date}'**
   String invoiceRowSubtitle(Object payment, Object date);
 
   /// No description provided for @statusPending.
@@ -2843,7 +3629,7 @@ abstract class AppLocalizations {
   /// No description provided for @branchLedgerRow.
   ///
   /// In en, this message translates to:
-  /// **'{debtor} → {creditor} · {amount}'**
+  /// **'{debtor} â†’ {creditor} Â· {amount}'**
   String branchLedgerRow(Object debtor, Object creditor, Object amount);
 
   /// No description provided for @entryTypeCharge.
@@ -2936,6 +3722,42 @@ abstract class AppLocalizations {
   /// **'Transfer completed; inter-branch charge recorded'**
   String get transferCompletedWithCharge;
 
+  /// No description provided for @editTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit transfer'**
+  String get editTransfer;
+
+  /// No description provided for @transferEditPendingOnly.
+  ///
+  /// In en, this message translates to:
+  /// **'Only pending transfers can be edited.'**
+  String get transferEditPendingOnly;
+
+  /// No description provided for @transferUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer updated'**
+  String get transferUpdated;
+
+  /// No description provided for @editPayment.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit payment'**
+  String get editPayment;
+
+  /// No description provided for @editPaymentHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the most recent payment can be corrected.'**
+  String get editPaymentHint;
+
+  /// No description provided for @paymentUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment updated'**
+  String get paymentUpdated;
+
   /// No description provided for @partsSalesChartTitle.
   ///
   /// In en, this message translates to:
@@ -2963,7 +3785,7 @@ abstract class AppLocalizations {
   /// No description provided for @reportDescPartsSalesChart.
   ///
   /// In en, this message translates to:
-  /// **'Monthly trend for top parts — by units or revenue.'**
+  /// **'Monthly trend for top parts â€” by units or revenue.'**
   String get reportDescPartsSalesChart;
 
   /// No description provided for @year.
@@ -2999,8 +3821,440 @@ abstract class AppLocalizations {
   /// No description provided for @topPartsYear.
   ///
   /// In en, this message translates to:
-  /// **'Top parts — {year}'**
+  /// **'Top parts â€” {year}'**
   String topPartsYear(Object year);
+
+  /// No description provided for @financialReportTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial report (P&L)'**
+  String get financialReportTitle;
+
+  /// No description provided for @reportDescFinancial.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue, discounts, refunds, gross profit, and net profit by period. Returns use approval date.'**
+  String get reportDescFinancial;
+
+  /// No description provided for @colRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get colRevenue;
+
+  /// No description provided for @colGrossProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross profit'**
+  String get colGrossProfit;
+
+  /// No description provided for @financialReturnsSection.
+  ///
+  /// In en, this message translates to:
+  /// **'Returns in period'**
+  String get financialReturnsSection;
+
+  /// No description provided for @financialCustomerReturns.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer returns'**
+  String get financialCustomerReturns;
+
+  /// No description provided for @financialSupplierReturns.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier returns'**
+  String get financialSupplierReturns;
+
+  /// No description provided for @financialByBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'By branch'**
+  String get financialByBranch;
+
+  /// No description provided for @financialReturnsApprovalNote.
+  ///
+  /// In en, this message translates to:
+  /// **'Returns are counted by approval date (completed_at), not create date.'**
+  String get financialReturnsApprovalNote;
+
+  /// No description provided for @usersTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Users'**
+  String get usersTitle;
+
+  /// No description provided for @usersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage staff accounts, roles, and branch assignment (admin only).'**
+  String get usersSubtitle;
+
+  /// No description provided for @newUser.
+  ///
+  /// In en, this message translates to:
+  /// **'New user'**
+  String get newUser;
+
+  /// No description provided for @editUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit user'**
+  String get editUser;
+
+  /// No description provided for @userSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'User saved'**
+  String get userSaved;
+
+  /// No description provided for @userDeactivated.
+  ///
+  /// In en, this message translates to:
+  /// **'User deactivated'**
+  String get userDeactivated;
+
+  /// No description provided for @deactivateUser.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate user'**
+  String get deactivateUser;
+
+  /// No description provided for @deactivateUserConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Deactivate {name}? They will no longer be able to sign in.'**
+  String deactivateUserConfirm(Object name);
+
+  /// No description provided for @role.
+  ///
+  /// In en, this message translates to:
+  /// **'Role'**
+  String get role;
+
+  /// No description provided for @posSelectBranch.
+  ///
+  /// In en, this message translates to:
+  /// **'Select branch for this sale'**
+  String get posSelectBranch;
+
+  /// No description provided for @posBranchRequiredHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a branch before adding items or completing a sale.'**
+  String get posBranchRequiredHint;
+
+  /// No description provided for @businessCapitalTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Business capital'**
+  String get businessCapitalTitle;
+
+  /// No description provided for @businessCapitalSubtitleAdmin.
+  ///
+  /// In en, this message translates to:
+  /// **'Set owner funding used to compare stock and receivables against available cash.'**
+  String get businessCapitalSubtitleAdmin;
+
+  /// No description provided for @businessCapitalSubtitleView.
+  ///
+  /// In en, this message translates to:
+  /// **'Financing overview (read-only). Contact an admin to change capital.'**
+  String get businessCapitalSubtitleView;
+
+  /// No description provided for @businessCapitalAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner capital'**
+  String get businessCapitalAmount;
+
+  /// No description provided for @businessCapitalSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Update capital'**
+  String get businessCapitalSet;
+
+  /// No description provided for @businessCapitalUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update business capital'**
+  String get businessCapitalUpdateTitle;
+
+  /// No description provided for @businessCapitalSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Business capital saved'**
+  String get businessCapitalSaved;
+
+  /// No description provided for @businessCapitalDefaultReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Capital adjustment'**
+  String get businessCapitalDefaultReason;
+
+  /// No description provided for @businessCapitalNotSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Capital not configured yet. An admin can set it below.'**
+  String get businessCapitalNotSet;
+
+  /// No description provided for @businessCapitalHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Capital history'**
+  String get businessCapitalHistory;
+
+  /// No description provided for @branchFilterAll.
+  ///
+  /// In en, this message translates to:
+  /// **'All branches'**
+  String get branchFilterAll;
+
+  /// No description provided for @branchFilterLabel.
+  ///
+  /// In en, this message translates to:
+  /// **'Branch'**
+  String get branchFilterLabel;
+
+  /// No description provided for @branchFilterClear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear branch filter'**
+  String get branchFilterClear;
+
+  /// No description provided for @withdrawFromProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw from profit'**
+  String get withdrawFromProfit;
+
+  /// No description provided for @withdrawableProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdrawable profit'**
+  String get withdrawableProfit;
+
+  /// No description provided for @profitWithdrawnSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Profit withdrawn'**
+  String get profitWithdrawnSuccess;
+
+  /// No description provided for @noWithdrawableProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'No withdrawable profit available'**
+  String get noWithdrawableProfit;
+
+  /// No description provided for @ownerCashOutTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Owner cash out'**
+  String get ownerCashOutTitle;
+
+  /// No description provided for @ownerCashOutSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Withdraw realized profit. Business capital is not reduced.'**
+  String get ownerCashOutSubtitle;
+
+  /// No description provided for @ownerCashOutRecord.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash out'**
+  String get ownerCashOutRecord;
+
+  /// No description provided for @ownerCashOutConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get ownerCashOutConfirm;
+
+  /// No description provided for @ownerCashOutAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount'**
+  String get ownerCashOutAmount;
+
+  /// No description provided for @ownerCashOutReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get ownerCashOutReason;
+
+  /// No description provided for @ownerCashOutSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash out recorded'**
+  String get ownerCashOutSuccess;
+
+  /// No description provided for @ownerCashOutHistory.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash out history'**
+  String get ownerCashOutHistory;
+
+  /// No description provided for @ownerCashOutAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be between 0.01 and {max}'**
+  String ownerCashOutAmountInvalid(Object max);
+
+  /// No description provided for @capitalInventoryAtCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory (at cost)'**
+  String get capitalInventoryAtCost;
+
+  /// No description provided for @capitalCustomerReceivables.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer receivables'**
+  String get capitalCustomerReceivables;
+
+  /// No description provided for @capitalSupplierDebt.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier debt'**
+  String get capitalSupplierDebt;
+
+  /// No description provided for @capitalDeployed.
+  ///
+  /// In en, this message translates to:
+  /// **'Deployed capital'**
+  String get capitalDeployed;
+
+  /// No description provided for @capitalEstimatedAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Est. available cash'**
+  String get capitalEstimatedAvailable;
+
+  /// No description provided for @notes.
+  ///
+  /// In en, this message translates to:
+  /// **'Notes'**
+  String get notes;
+
+  /// No description provided for @invalidAmount.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid amount'**
+  String get invalidAmount;
+
+  /// No description provided for @weeklyDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly discounts'**
+  String get weeklyDiscount;
+
+  /// No description provided for @weeklyGrossProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly gross profit'**
+  String get weeklyGrossProfit;
+
+  /// No description provided for @dashboardPurchasesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases & supplier debt'**
+  String get dashboardPurchasesTitle;
+
+  /// No description provided for @dashboardPurchasesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'POs, installments, and payments this week'**
+  String get dashboardPurchasesSubtitle;
+
+  /// No description provided for @totalSupplierDebt.
+  ///
+  /// In en, this message translates to:
+  /// **'Total supplier debt'**
+  String get totalSupplierDebt;
+
+  /// No description provided for @unpaidInstallmentsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid installments'**
+  String get unpaidInstallmentsTotal;
+
+  /// No description provided for @unpaidInstallmentsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid installments'**
+  String get unpaidInstallmentsCount;
+
+  /// No description provided for @overdueInstallmentsTotal.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue installments'**
+  String get overdueInstallmentsTotal;
+
+  /// No description provided for @weeklySupplierPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier payments (week)'**
+  String get weeklySupplierPayments;
+
+  /// No description provided for @weeklyPurchasesOrdered.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases ordered (week)'**
+  String get weeklyPurchasesOrdered;
+
+  /// No description provided for @weeklyPurchasesReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases received (week)'**
+  String get weeklyPurchasesReceived;
+
+  /// No description provided for @payablesOverdueInstallments.
+  ///
+  /// In en, this message translates to:
+  /// **'Overdue installments'**
+  String get payablesOverdueInstallments;
+
+  /// No description provided for @payablesUpcomingInstallments.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming installments'**
+  String get payablesUpcomingInstallments;
+
+  /// No description provided for @viewInstallments.
+  ///
+  /// In en, this message translates to:
+  /// **'View installments'**
+  String get viewInstallments;
+
+  /// No description provided for @averageCost.
+  ///
+  /// In en, this message translates to:
+  /// **'Average cost'**
+  String get averageCost;
+
+  /// No description provided for @catalogCostRollup.
+  ///
+  /// In en, this message translates to:
+  /// **'Weighted average cost'**
+  String get catalogCostRollup;
+
+  /// No description provided for @costFromPurchasesHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave blank to use the current branch average.'**
+  String get costFromPurchasesHint;
+
+  /// No description provided for @catalogCostRollupHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Catalog rollup — branch costs update from purchases and stock receipts.'**
+  String get catalogCostRollupHint;
+
+  /// No description provided for @adjustUnitCostOptional.
+  ///
+  /// In en, this message translates to:
+  /// **'Unit cost (optional)'**
+  String get adjustUnitCostOptional;
 }
 
 class _AppLocalizationsDelegate

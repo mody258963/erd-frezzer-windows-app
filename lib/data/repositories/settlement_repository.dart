@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 
 import '../../core/api/api_utils.dart';
+import '../models/settlement_upcoming_model.dart';
 
 class SettlementRepository {
   SettlementRepository(this._dio);
@@ -11,9 +12,14 @@ class SettlementRepository {
     return parseList(r.data, (j) => j);
   }
 
-  Future<List<Map<String, dynamic>>> upcoming() async {
-    final r = await _dio.get<dynamic>('/settlements/upcoming');
-    return parseList(r.data, (j) => j);
+  Future<List<SettlementUpcomingRow>> upcoming({String? settlementCycle}) async {
+    final r = await _dio.get<dynamic>(
+      '/settlements/upcoming',
+      queryParameters: settlementCycle != null && settlementCycle.isNotEmpty
+          ? {'settlement_cycle': settlementCycle}
+          : null,
+    );
+    return parseList(r.data, SettlementUpcomingRow.fromJson);
   }
 
   Future<Map<String, dynamic>> get(String id) async {

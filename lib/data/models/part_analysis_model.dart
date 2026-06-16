@@ -77,6 +77,7 @@ class PartAnalysisInventory {
     required this.totalQuantity,
     required this.minStock,
     required this.isBelowMinStock,
+    required this.averageCost,
     required this.valueAtCost,
     required this.valueAtSell,
     required this.marginPerUnit,
@@ -86,6 +87,7 @@ class PartAnalysisInventory {
   final int totalQuantity;
   final int minStock;
   final bool isBelowMinStock;
+  final double averageCost;
   final double valueAtCost;
   final double valueAtSell;
   final double marginPerUnit;
@@ -96,6 +98,7 @@ class PartAnalysisInventory {
         totalQuantity: _int(json['total_quantity']),
         minStock: _int(json['min_stock']),
         isBelowMinStock: json['is_below_min_stock'] as bool? ?? false,
+        averageCost: _double(json['average_cost']),
         valueAtCost: _double(json['value_at_cost']),
         valueAtSell: _double(json['value_at_sell']),
         marginPerUnit: _double(json['margin_per_unit']),
@@ -114,17 +117,20 @@ class PartAnalysisBranchQty {
     required this.branchId,
     required this.branchName,
     required this.quantity,
+    this.averageCost,
   });
 
   final String branchId;
   final String branchName;
   final int quantity;
+  final double? averageCost;
 
   factory PartAnalysisBranchQty.fromJson(Map<String, dynamic> json) =>
       PartAnalysisBranchQty(
         branchId: '${json['branch_id'] ?? ''}',
         branchName: '${json['branch_name'] ?? '—'}',
         quantity: _int(json['quantity']),
+        averageCost: (json['average_cost'] as num?)?.toDouble(),
       );
 }
 

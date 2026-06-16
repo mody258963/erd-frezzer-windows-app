@@ -14,6 +14,7 @@ String navLabel(BuildContext context, String labelKey) {
     'navPos' => l.navPos,
     'navParts' => l.navParts,
     'navStock' => l.navStock,
+    'navPartsStock' => l.navPartsStock,
     'navCustomers' => l.navCustomers,
     'navSales' => l.navSales,
     'navSettle' => l.navSettle,

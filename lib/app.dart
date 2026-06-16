@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'core/auth/auth_cubit.dart';
+import 'core/branch/branch_filter_cubit.dart';
 import 'core/connectivity/connectivity_cubit.dart';
 import 'core/l10n/l10n_extension.dart';
 import 'core/settings/settings_service.dart';
@@ -41,6 +42,7 @@ class FrostPartsAppState extends State<FrostPartsApp> {
     return MultiBlocProvider(
       providers: [
         BlocProvider.value(value: getIt<AuthCubit>()),
+        BlocProvider.value(value: getIt<BranchFilterCubit>()),
         BlocProvider.value(value: getIt<ConnectivityCubit>()),
         BlocProvider.value(value: getIt<SyncBloc>()),
       ],

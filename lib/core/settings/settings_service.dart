@@ -49,4 +49,25 @@ class SettingsService {
 
   Future<void> setAutoPrintOnSale(bool value) =>
       _prefs.setBool(AppConstants.autoPrintOnSaleKey, value);
+
+  String? get posBranchId => _prefs.getString(AppConstants.posBranchIdKey);
+
+  Future<void> setPosBranchId(String? id) async {
+    if (id == null || id.isEmpty) {
+      await _prefs.remove(AppConstants.posBranchIdKey);
+    } else {
+      await _prefs.setString(AppConstants.posBranchIdKey, id);
+    }
+  }
+
+  String? get adminBranchFilterId =>
+      _prefs.getString(AppConstants.adminBranchFilterIdKey);
+
+  Future<void> setAdminBranchFilterId(String? id) async {
+    if (id == null || id.isEmpty) {
+      await _prefs.remove(AppConstants.adminBranchFilterIdKey);
+    } else {
+      await _prefs.setString(AppConstants.adminBranchFilterIdKey, id);
+    }
+  }
 }

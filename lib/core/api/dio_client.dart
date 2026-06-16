@@ -1,9 +1,12 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../constants/app_constants.dart';
 import '../settings/settings_service.dart';
 import '../storage/secure_storage.dart';
+import 'api_logging_interceptor.dart';
 import 'auth_interceptor.dart';
+import 'branch_filter_interceptor.dart';
 
 class DioClient {
   DioClient(this._settings, this._secureStorage);
@@ -34,6 +37,10 @@ class DioClient {
     client.interceptors.add(
       AuthInterceptor(secureStorage: _secureStorage),
     );
+    client.interceptors.add(BranchFilterInterceptor());
+    if (kDebugMode) {
+      client.interceptors.add(ApiLoggingInterceptor());
+    }
     return client;
   }
 }

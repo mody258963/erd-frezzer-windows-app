@@ -2,6 +2,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../data/models/user_model.dart';
 import '../../data/repositories/auth_repository.dart';
+import '../../di/injection.dart';
+import '../catalog/catalog_refresh_scheduler.dart';
 import '../connectivity/connectivity_cubit.dart';
 import 'auth_state.dart';
 
@@ -26,11 +28,13 @@ class AuthCubit extends Cubit<AuthState> {
       try {
         final user = await _authRepository.me();
         emit(AuthState(status: AuthStatus.authenticated, user: user));
+        getIt<CatalogRefreshScheduler>().start();
         return;
       } catch (_) {
         final cached = await _authRepository.getCachedUser();
         if (cached != null) {
           emit(AuthState(status: AuthStatus.authenticated, user: cached));
+          getIt<CatalogRefreshScheduler>().start();
           return;
         }
       }
@@ -38,6 +42,7 @@ class AuthCubit extends Cubit<AuthState> {
       final cached = await _authRepository.getCachedUser();
       if (cached != null) {
         emit(AuthState(status: AuthStatus.authenticated, user: cached));
+        getIt<CatalogRefreshScheduler>().start();
         return;
       }
     }
@@ -47,9 +52,11 @@ class AuthCubit extends Cubit<AuthState> {
 
   void setUserAuthenticated(UserModel user) {
     emit(AuthState(status: AuthStatus.authenticated, user: user));
+    getIt<CatalogRefreshScheduler>().start();
   }
 
   Future<void> signOut({bool callApi = true}) async {
+    getIt<CatalogRefreshScheduler>().stop();
     if (callApi) {
       try {
         await _authRepository.logout();
@@ -63,6 +70,7 @@ class AuthCubit extends Cubit<AuthState> {
   }
 
   Future<void> signOutLocal() async {
+    getIt<CatalogRefreshScheduler>().stop();
     await _authRepository.clearSessionLocal();
     emit(AuthState.unauthenticated);
   }

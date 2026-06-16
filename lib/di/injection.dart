@@ -2,8 +2,11 @@ import 'package:get_it/get_it.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../core/api/auth_interceptor.dart';
+import '../core/catalog/catalog_refresh_scheduler.dart';
+import '../core/events/app_refresh_bus.dart';
 import '../core/api/dio_client.dart';
 import '../core/auth/auth_cubit.dart';
+import '../core/branch/branch_filter_cubit.dart';
 import '../core/connectivity/connectivity_cubit.dart';
 import '../core/printer/platform/windows_printer_channel.dart';
 import '../core/printer/repository/printer_repository.dart';
@@ -16,6 +19,7 @@ import '../data/local/app_database.dart';
 import '../data/repositories/auth_repository.dart';
 import '../data/repositories/branch_finance_repository.dart';
 import '../data/repositories/branch_repository.dart';
+import '../data/repositories/capital_repository.dart';
 import '../data/repositories/catalog_sync_repository.dart';
 import '../data/repositories/customer_repository.dart';
 import '../data/repositories/dashboard_repository.dart';
@@ -30,6 +34,7 @@ import '../data/repositories/return_repository.dart';
 import '../data/repositories/settlement_repository.dart';
 import '../data/repositories/supplier_repository.dart';
 import '../data/repositories/transfer_repository.dart';
+import '../data/repositories/user_repository.dart';
 import '../data/workers/sync_worker.dart';
 import '../features/sync/sync_bloc.dart';
 
@@ -44,6 +49,7 @@ Future<void> setupInjection() async {
     DioClient(getIt(), getIt()),
   );
   getIt.registerSingleton<AppDatabase>(AppDatabase());
+  getIt.registerSingleton<AppRefreshBus>(AppRefreshBus());
 
   getIt.registerLazySingleton(() => AuthRepository(getIt<DioClient>().dio, getIt()));
 
@@ -54,6 +60,14 @@ Future<void> setupInjection() async {
     () => AuthCubit(getIt<AuthRepository>(), getIt<ConnectivityCubit>()),
   );
   getIt.registerLazySingleton(() => BranchRepository(getIt<DioClient>().dio));
+  getIt.registerLazySingleton<BranchFilterCubit>(
+    () => BranchFilterCubit(
+      getIt<BranchRepository>(),
+      getIt<SettingsService>(),
+      getIt<AppRefreshBus>(),
+    ),
+  );
+  getIt.registerLazySingleton(() => CapitalRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton(() => PartRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton<PartCategoryRepository>(
     () => PartCategoryRepository(getIt<DioClient>().dio),
@@ -76,11 +90,22 @@ Future<void> setupInjection() async {
   getIt.registerLazySingleton(() => InstallmentRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton(() => ReturnRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton(() => ReportRepository(getIt<DioClient>().dio));
+  getIt.registerLazySingleton(() => UserRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton(
     () => CatalogSyncRepository(
       getIt<InventoryRepository>(),
       getIt<CustomerRepository>(),
+      getIt<PartRepository>(),
       getIt<AppDatabase>(),
+      getIt<AppRefreshBus>(),
+    ),
+  );
+  getIt.registerLazySingleton(
+    () => CatalogRefreshScheduler(
+      getIt<ConnectivityCubit>(),
+      getIt<AuthCubit>(),
+      getIt<CatalogSyncRepository>(),
+      getIt<AppRefreshBus>(),
     ),
   );
 

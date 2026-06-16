@@ -5,6 +5,7 @@ import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_colors.dart';
 import '../daily_profit.dart';
 import 'daily_profit_panel.dart';
+import '../dashboard_summary_utils.dart';
 
 class DashboardKpiGrid extends StatelessWidget {
   const DashboardKpiGrid({
@@ -21,9 +22,10 @@ class DashboardKpiGrid extends StatelessWidget {
     final l10n = context.l10n;
     final scheme = Theme.of(context).colorScheme;
     final lowStock = (summary['low_stock_count'] as num?)?.toInt() ?? 0;
-    final overdue = (summary['overdue_installments'] as num?)?.toInt() ?? 0;
+    final overdue = summaryOverdueInstallmentCount(summary);
     final pendingCredit = (summary['pending_credit_invoices'] as num?)?.toInt() ?? 0;
-    final attention = lowStock + overdue + pendingCredit;
+    final unpaidCount = summaryInt(summary, 'unpaid_installments_count');
+    final attention = lowStock + overdue + pendingCredit + unpaidCount;
 
     final kpiTiles = <Widget>[
       if (dailyProfit == null)
@@ -42,11 +44,19 @@ class DashboardKpiGrid extends StatelessWidget {
       ),
       _KpiTile(
         label: l10n.overdueInstallments,
-        value: '$overdue',
+        value: overdue > 0 ? '$overdue' : '0',
         icon: Icons.schedule_rounded,
         color: AppColors.secondary,
         highlight: overdue > 0,
       ),
+      if (unpaidCount > 0)
+        _KpiTile(
+          label: l10n.unpaidInstallmentsCount,
+          value: '$unpaidCount',
+          icon: Icons.payments_outlined,
+          color: AppColors.warning,
+          highlight: true,
+        ),
       _KpiTile(
         label: l10n.pendingCredit,
         value: '$pendingCredit',
