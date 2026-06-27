@@ -121,6 +121,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get dashboardSubtitle => 'نظرة سريعة على المبيعات والمخزون والأموال';
 
   @override
+  String get dashboardPeriodToday => 'اليوم';
+
+  @override
+  String get dashboardPeriodWeek => 'هذا الأسبوع';
+
+  @override
+  String get dashboardPeriodMonth => 'هذا الشهر';
+
+  @override
+  String get monthlyProfit => 'ربح الشهر';
+
+  @override
   String get dashboardNeedsAttention => 'يحتاج انتباهك';
 
   @override
@@ -384,6 +396,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get apiBaseUrl => 'رابط API الأساسي';
 
   @override
+  String get apiBaseUrlHint => 'عنوان السيرفر فقط — بدون /api/v1';
+
+  @override
+  String get apiBaseUrlSaved => 'تم حفظ رابط API — جاري التحقق من الاتصال…';
+
+  @override
   String get offlineCashOnly => 'نقدي فقط عند عدم الاتصال';
 
   @override
@@ -581,6 +599,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get supplierDebt => 'الدين المستحق';
 
   @override
+  String get supplierUnpaidInstallments => 'أقساط غير مدفوعة';
+
+  @override
+  String get viewAllInstallments => 'عرض كل الأقساط';
+
+  @override
+  String get supplierPayablesTitle => 'دائنون — موردون';
+
+  @override
+  String get supplierPayablesSubtitle =>
+      'قسم واحد لكل مورد — الدفع من إجمالي الدين';
+
+  @override
+  String get paySupplierTitle => 'دفع مورد';
+
+  @override
+  String get supplierPaidSuccess => 'تم تسجيل دفعة المورد.';
+
+  @override
+  String get supplierNoDebt => 'لا يوجد دين مستحق لهذا المورد.';
+
+  @override
+  String supplierPayAmountInvalid(Object max) {
+    return 'المبلغ يجب أن يكون بين 0.01 و $max';
+  }
+
+  @override
+  String get payInstallmentLegacy => 'دفع قسط';
+
+  @override
   String get save => 'حفظ';
 
   @override
@@ -751,7 +799,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tapRowForInvoice => 'اضغط على صف لفتح الفاتورة كاملة.';
 
   @override
-  String get customerViewThisWeek => 'هذا الأسبوع';
+  String get customerViewThisWeek => 'هذا الأسبوع (الإثنين 9 ص – السبت)';
 
   @override
   String get customerViewHistory => 'مسددة / السجل';
@@ -790,7 +838,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get customerNoWeekInvoices => 'لا توجد فواتير هذا الأسبوع للطباعة.';
 
   @override
-  String get printWeekInvoices => 'طباعة الكل (مهمة واحدة)';
+  String get printWeekInvoices => 'طباعة كشف الأسبوع';
+
+  @override
+  String get printWeekInvoicesDetailed => 'طباعة كل فاتورة';
+
+  @override
+  String get weekStatementPrinted => 'تم إرسال كشف الأسبوع للطابعة';
 
   @override
   String weekInvoicesPrinted(Object count) {
@@ -1925,6 +1979,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get markSettled => 'تسوية';
 
   @override
+  String get editBranchFinanceEntry => 'تعديل القيد';
+
+  @override
+  String get voidBranchFinanceEntry => 'إلغاء القيد';
+
+  @override
+  String get voidBranchFinanceEntryTitle => 'إلغاء هذا القيد؟';
+
+  @override
+  String get voidBranchFinanceEntryHint =>
+      'سيتم تحديث الرصيد بين الفروع. قيود التحويل يجب عكسها من شاشة التحويلات.';
+
+  @override
+  String get branchFinanceEntryUpdated => 'تم تحديث القيد';
+
+  @override
+  String get branchFinanceEntryVoided => 'تم إلغاء القيد';
+
+  @override
+  String get entryVoided => 'ملغى';
+
+  @override
   String get needTwoBranches => 'يلزم فرعان على الأقل';
 
   @override
@@ -1965,6 +2041,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get transferUpdated => 'تم تحديث التحويل';
+
+  @override
+  String get reverseTransfer => 'عكس التحويل';
+
+  @override
+  String get reverseTransferTitle => 'عكس تحويل مكتمل؟';
+
+  @override
+  String get reverseTransferHint =>
+      'تعود الكميات إلى الفرع المصدر ويُلغى المستحق بين الفروع. لا يتأثر النقد المحقق في لوحة التحكم.';
+
+  @override
+  String get transferReversed => 'تم عكس التحويل';
 
   @override
   String get editPayment => 'تعديل الدفعة';
@@ -2084,14 +2173,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get businessCapitalSubtitleAdmin =>
-      'حدّد تمويل المالك لمقارنة المخزون والذمم بالنقد المتاح.';
+      'عدّل رصيد النقد الافتتاحي عندما يختلف عدّ الصندوق عن النظام. رأس المال = المخزون + النقد الفعلي.';
 
   @override
   String get businessCapitalSubtitleView =>
-      'نظرة عامة على التمويل (للقراءة فقط). تواصل مع المسؤول لتغيير رأس المال.';
+      'محسوب من المخزون بالتكلفة + النقد في الصندوق (للقراءة فقط).';
 
   @override
-  String get businessCapitalAmount => 'رأس مال المالك';
+  String get businessCapitalAmount => 'رأس المال';
+
+  @override
+  String get businessCapitalFormulaHint =>
+      'المخزون بالتكلفة + النقد في الصندوق';
+
+  @override
+  String get openingCashBalance => 'رصيد النقد الافتتاحي';
+
+  @override
+  String get openingCashSet => 'ضبط النقد الافتتاحي';
+
+  @override
+  String get openingCashUpdateTitle => 'تحديث رصيد النقد الافتتاحي';
+
+  @override
+  String get openingCashUpdateHint =>
+      'يضبط النقد في الدرج عند بداية اليوم، وليس رأس المال الكلي. يُضاف المخزون تلقائياً.';
+
+  @override
+  String get openingCashSaved => 'تم حفظ رصيد النقد الافتتاحي';
+
+  @override
+  String get openingCashDefaultReason => 'عدّ الصندوق الافتتاحي';
 
   @override
   String get businessCapitalSet => 'تحديث رأس المال';
@@ -2128,6 +2240,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get withdrawableProfit => 'الربح القابل للسحب';
 
   @override
+  String get realizedProfit => 'الربح المحقق';
+
+  @override
+  String get totalProfitWithdrawn => 'إجمالي المسحوب';
+
+  @override
   String get profitWithdrawnSuccess => 'تم سحب الربح';
 
   @override
@@ -2138,7 +2256,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get ownerCashOutSubtitle =>
-      'سحب الربح المحقق. لا يُخفض رأس مال النشاط.';
+      'يُخصم من هامش الربح وليس من النقد الافتتاحي. ينخفض النقد في الصندوق ورأس المال عند خروج المبلغ.';
+
+  @override
+  String get ownerCashOutDialogHint =>
+      'رصيد النقد الافتتاحي لا يتغير. الحد الأقصى للسحب = الربح المحقق ناقص المسحوب سابقاً.';
 
   @override
   String get ownerCashOutRecord => 'سحب نقدي';
@@ -2198,6 +2320,56 @@ class AppLocalizationsAr extends AppLocalizations {
       'أوامر الشراء والأقساط والمدفوعات هذا الأسبوع';
 
   @override
+  String get costOfGoods => 'تكلفة البضاعة';
+
+  @override
+  String get dashboardSnapshotTitle => 'الوضع الحالي';
+
+  @override
+  String get dashboardSnapshotSubtitle =>
+      'لقطة فورية — لا تتغير مع تبويب الفترة';
+
+  @override
+  String get periodNetCashFlowDay => 'صافي التدفق النقدي — اليوم';
+
+  @override
+  String get periodNetCashFlowWeek => 'صافي التدفق النقدي — الأسبوع';
+
+  @override
+  String get periodNetCashFlowMonth => 'صافي التدفق النقدي — الشهر';
+
+  @override
+  String get dashboardFinanceOverview => 'نظرة مالية';
+
+  @override
+  String get dashboardFinanceOverviewSubtitle =>
+      'رأس المال والنقد والالتزامات في مكان واحد';
+
+  @override
+  String get dashboardPeriodActivity => 'نشاط الفترة';
+
+  @override
+  String get cashOnHandRealized => 'النقد في الصندوق';
+
+  @override
+  String get mustCollectCustomers => 'مستحق من العملاء';
+
+  @override
+  String get mustPaySuppliers => 'مستحق للموردين';
+
+  @override
+  String get weeklyNetCashFlowRealized => 'صافي التدفق النقدي الأسبوعي';
+
+  @override
+  String get weeklyCashInRealized => 'نقد داخل (أسبوع)';
+
+  @override
+  String get weeklyCashOutRealized => 'نقد خارج (أسبوع)';
+
+  @override
+  String get legacyEstimatedAvailable => 'تقدير قديم';
+
+  @override
   String get totalSupplierDebt => 'إجمالي ديون الموردين';
 
   @override
@@ -2217,6 +2389,57 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get weeklyPurchasesReceived => 'مشتريات مستلمة (الأسبوع)';
+
+  @override
+  String get periodRevenue => 'الإيراد';
+
+  @override
+  String get periodNetSales => 'صافي المبيعات';
+
+  @override
+  String get periodDiscount => 'الخصومات';
+
+  @override
+  String get periodGrossProfit => 'إجمالي الربح';
+
+  @override
+  String get periodCustomerRefunds => 'مرتجعات العملاء';
+
+  @override
+  String get periodNetCashFlowRealized => 'صافي التدفق النقدي';
+
+  @override
+  String get periodCashInRealized => 'نقد داخل';
+
+  @override
+  String get periodCashOutRealized => 'نقد خارج';
+
+  @override
+  String get periodCashInDay => 'نقد داخل — اليوم';
+
+  @override
+  String get periodCashInWeek => 'نقد داخل — الأسبوع';
+
+  @override
+  String get periodCashInMonth => 'نقد داخل — الشهر';
+
+  @override
+  String get periodCashOutDay => 'نقد خارج — اليوم';
+
+  @override
+  String get periodCashOutWeek => 'نقد خارج — الأسبوع';
+
+  @override
+  String get periodCashOutMonth => 'نقد خارج — الشهر';
+
+  @override
+  String get periodSupplierPayments => 'مدفوعات الموردين';
+
+  @override
+  String get periodPurchasesOrdered => 'مشتريات مُطلَبة';
+
+  @override
+  String get periodPurchasesReceived => 'مشتريات مستلمة';
 
   @override
   String get payablesOverdueInstallments => 'أقساط متأخرة';

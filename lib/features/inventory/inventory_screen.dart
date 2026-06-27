@@ -70,7 +70,10 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   void _onAppRefresh(AppRefreshKind kind) {
     if (!mounted) return;
-    if (kind == AppRefreshKind.branchFilter) _load();
+    if (kind == AppRefreshKind.branchFilter ||
+        kind == AppRefreshKind.inventory) {
+      _load();
+    }
   }
 
   Future<void> _loadBranchNames() async {

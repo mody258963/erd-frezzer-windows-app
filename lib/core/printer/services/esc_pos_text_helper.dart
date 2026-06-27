@@ -83,6 +83,39 @@ class EscPosTextHelper {
     );
   }
 
+  static Future<void> printLabelValueRow(
+    Generator generator,
+    List<int> bytes, {
+    required String label,
+    required String value,
+    required int paperWidthPx,
+    bool bold = false,
+  }) async {
+    await printColumns(
+      generator,
+      bytes,
+      left: label,
+      right: value,
+      paperWidthPx: paperWidthPx,
+      leftStyles: PosStyles(bold: bold),
+      rightStyles: PosStyles(align: PosAlign.right, bold: bold),
+    );
+  }
+
+  static String _joinTableCells(
+    String item,
+    String qty,
+    String price,
+    String total,
+  ) {
+    String pad(String value, int width) {
+      if (value.length >= width) return value;
+      return value.padLeft(width);
+    }
+
+    return '${pad(qty, 4)} ${pad(price, 8)} ${pad(total, 8)}  $item';
+  }
+
   static void printRow(
     Generator generator,
     List<int> bytes,
@@ -172,6 +205,18 @@ class EscPosTextHelper {
       return;
     }
 
+    // Arabic (or mixed) qty/price/total — one raster line for the full row.
+    if (_needsRaster(qty) || _needsRaster(price) || _needsRaster(total)) {
+      await printLine(
+        generator,
+        bytes,
+        _joinTableCells(item, qty, price, total),
+        styles: style,
+        paperWidthPx: paperWidthPx,
+      );
+      return;
+    }
+
     if (_needsRaster(item)) {
       await printLine(
         generator,
@@ -189,11 +234,15 @@ class EscPosTextHelper {
         paperWidthPx: paperWidthPx,
       );
     }
-    printRow(generator, bytes, [
-      PosColumn(text: '', width: 5),
-      PosColumn(text: sanitizeForEscPos(qty), width: 2, styles: numStyle),
-      PosColumn(text: sanitizeForEscPos(price), width: 2, styles: numStyle),
-      PosColumn(text: sanitizeForEscPos(total), width: 3, styles: numStyle),
-    ]);
+    final qtySafe = sanitizeForEscPos(qty);
+    final priceSafe = sanitizeForEscPos(price);
+    final totalSafe = sanitizeForEscPos(total);
+    await printLine(
+      generator,
+      bytes,
+      '${qtySafe.padLeft(4)} ${priceSafe.padLeft(8)} ${totalSafe.padLeft(8)}',
+      styles: const PosStyles(align: PosAlign.center),
+      paperWidthPx: paperWidthPx,
+    );
   }
 }

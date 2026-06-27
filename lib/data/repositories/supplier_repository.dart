@@ -60,4 +60,33 @@ class SupplierRepository {
   Future<void> delete(String id) async {
     await _dio.delete('/suppliers/$id');
   }
+
+  /// Lump-sum payment allocated FIFO across installments.
+  Future<Map<String, dynamic>> recordPayment(
+    String id, {
+    required String paymentMethod,
+    double? amount,
+    String? notes,
+  }) async {
+    final r = await _dio.post<dynamic>(
+      '/suppliers/$id/payments',
+      data: {
+        'payment_method': paymentMethod,
+        if (amount != null) 'amount': amount,
+        if (notes != null && notes.isNotEmpty) 'notes': notes,
+      },
+    );
+    return parseObject(r.data);
+  }
+
+  Future<List<Map<String, dynamic>>> payments(
+    String id, {
+    int perPage = 25,
+  }) async {
+    final r = await _dio.get<dynamic>(
+      '/suppliers/$id/payments',
+      queryParameters: {'per_page': perPage},
+    );
+    return parseList(r.data, (j) => j);
+  }
 }

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../core/dashboard/dashboard_period.dart';
 import '../../../core/l10n/api_labels.dart';
 import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../router/route_paths.dart';
+import '../dashboard_period_labels.dart';
 import '../dashboard_summary_utils.dart';
 import 'dashboard_section.dart';
 
@@ -13,11 +15,13 @@ class DashboardSupplierPanel extends StatelessWidget {
   const DashboardSupplierPanel({
     required this.summary,
     required this.payables,
+    required this.period,
     super.key,
   });
 
   final Map<String, dynamic> summary;
   final Map<String, dynamic>? payables;
+  final DashboardPeriod period;
 
   @override
   Widget build(BuildContext context) {
@@ -27,9 +31,9 @@ class DashboardSupplierPanel extends StatelessWidget {
     final unpaidCount = summaryInt(summary, 'unpaid_installments_count');
     final overdueTotal = summaryNum(summary, 'overdue_installments_total');
     final overdueCount = summaryOverdueInstallmentCount(summary);
-    final weeklyPaid = summaryNum(summary, 'weekly_supplier_payments');
-    final weeklyOrdered = summaryNum(summary, 'weekly_purchases_ordered');
-    final weeklyReceived = summaryNum(summary, 'weekly_purchases_received');
+    final weeklyPaid = summaryPeriodNum(summary, 'supplier_payments');
+    final weeklyOrdered = summaryPeriodNum(summary, 'purchases_ordered');
+    final weeklyReceived = summaryPeriodNum(summary, 'purchases_received');
 
     final hasSummary = supplierDebt > 0 ||
         unpaidTotal > 0 ||
@@ -85,20 +89,20 @@ class DashboardSupplierPanel extends StatelessWidget {
                     ),
                   if (weeklyPaid > 0)
                     _StatChip(
-                      label: l10n.weeklySupplierPayments,
+                      label: dashboardSupplierPaymentsLabel(context, period),
                       value: formatMoney(context, weeklyPaid),
                       icon: Icons.check_circle_outline,
                       color: AppColors.success,
                     ),
                   if (weeklyOrdered > 0)
                     _StatChip(
-                      label: l10n.weeklyPurchasesOrdered,
+                      label: dashboardPurchasesOrderedLabel(context, period),
                       value: formatMoney(context, weeklyOrdered),
                       icon: Icons.shopping_cart_outlined,
                     ),
                   if (weeklyReceived > 0)
                     _StatChip(
-                      label: l10n.weeklyPurchasesReceived,
+                      label: dashboardPurchasesReceivedLabel(context, period),
                       value: formatMoney(context, weeklyReceived),
                       icon: Icons.inventory_outlined,
                     ),

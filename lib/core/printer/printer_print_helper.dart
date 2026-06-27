@@ -5,6 +5,7 @@ import 'services/invoice_printer_service.dart';
 import 'services/printer_manager.dart';
 import 'services/printer_service.dart';
 import 'models/daily_sales_report.dart';
+import 'models/customer_week_statement.dart';
 
 /// Ensures default printer is connected, then prints.
 Future<void> printWithConnectedPrinter(
@@ -45,8 +46,28 @@ Future<void> printInvoicesBatch(List<InvoiceModel> invoices) async {
   );
 }
 
-Future<void> printDailySalesReport(DailySalesReport report) async {
+Future<void> printDailySalesReport(
+  DailySalesReport report, {
+  bool compact = false,
+}) async {
   await printWithConnectedPrinter(
-    () => getIt<InvoicePrinterService>().printDailySalesReport(report),
+    () => getIt<InvoicePrinterService>().printDailySalesReport(
+      report,
+      compact: compact,
+    ),
+  );
+}
+
+Future<void> printDailyDrawerReport(DailySalesReport report) async {
+  await printWithConnectedPrinter(
+    () => getIt<InvoicePrinterService>().printDailyDrawerReport(report),
+  );
+}
+
+Future<void> printCustomerWeeklyStatement(
+  CustomerWeekStatement statement,
+) async {
+  await printWithConnectedPrinter(
+    () => getIt<InvoicePrinterService>().printCustomerWeeklyStatement(statement),
   );
 }

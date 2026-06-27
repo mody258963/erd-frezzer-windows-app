@@ -9,11 +9,11 @@ import '../../../data/models/capital_model.dart';
 import '../../../data/models/user_role.dart';
 import '../../../data/repositories/capital_repository.dart';
 import '../../../di/injection.dart';
-import '../../shared/financing_snapshot_panel.dart';
+import '../../shared/business_capital_breakdown.dart';
 import '../../shared/form_field_spacing.dart';
 import '../../shared/loading_error.dart';
 
-/// Owner capital + financing snapshot (`/settings/capital`).
+/// Opening cash balance + computed business capital (`/settings/capital`).
 class BusinessCapitalCard extends StatefulWidget {
   const BusinessCapitalCard({
     required this.role,
@@ -55,8 +55,12 @@ class _BusinessCapitalCardState extends State<BusinessCapitalCard> {
   }
 
   void _onRefresh(AppRefreshKind kind) {
-    if (!mounted || kind != AppRefreshKind.branchFilter) return;
-    _load();
+    if (!mounted) return;
+    if (kind == AppRefreshKind.branchFilter ||
+        kind == AppRefreshKind.dashboard ||
+        kind == AppRefreshKind.inventory) {
+      _load();
+    }
   }
 
   String? get _branchId => apiBranchIdFromContext(context);
@@ -85,7 +89,7 @@ class _BusinessCapitalCardState extends State<BusinessCapitalCard> {
   Future<void> _save() async {
     final l10n = context.l10n;
     final amountCtrl = TextEditingController(
-      text: _settings?.capitalAmount.toStringAsFixed(0) ?? '',
+      text: _settings?.openingCashBalance.toStringAsFixed(0) ?? '',
     );
     final reasonCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
@@ -93,31 +97,42 @@ class _BusinessCapitalCardState extends State<BusinessCapitalCard> {
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(l10n.businessCapitalUpdateTitle),
+        title: Text(l10n.openingCashUpdateTitle),
         content: SizedBox(
           width: 400,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: spacedFormFields([
-                TextField(
-                  controller: amountCtrl,
-                  decoration: InputDecoration(
-                    labelText: l10n.businessCapitalAmount,
-                    suffixText: _settings?.currency ?? 'EGP',
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  l10n.openingCashUpdateHint,
+                  style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(ctx).colorScheme.onSurfaceVariant,
+                        height: 1.4,
+                      ),
+                ),
+                const SizedBox(height: 12),
+                ...spacedFormFields([
+                  TextField(
+                    controller: amountCtrl,
+                    decoration: InputDecoration(
+                      labelText: l10n.openingCashBalance,
+                      suffixText: _settings?.currency ?? 'EGP',
+                    ),
+                    keyboardType: TextInputType.number,
                   ),
-                  keyboardType: TextInputType.number,
-                ),
-                TextField(
-                  controller: reasonCtrl,
-                  decoration: InputDecoration(labelText: l10n.reason),
-                ),
-                TextField(
-                  controller: notesCtrl,
-                  decoration: InputDecoration(labelText: l10n.notes),
-                  maxLines: 2,
-                ),
-              ]),
+                  TextField(
+                    controller: reasonCtrl,
+                    decoration: InputDecoration(labelText: l10n.reason),
+                  ),
+                  TextField(
+                    controller: notesCtrl,
+                    decoration: InputDecoration(labelText: l10n.notes),
+                    maxLines: 2,
+                  ),
+                ]),
+              ],
             ),
           ),
         ),
@@ -159,7 +174,7 @@ class _BusinessCapitalCardState extends State<BusinessCapitalCard> {
     try {
       final updated = await getIt<CapitalRepository>().update(
         capitalAmount: amount,
-        reason: reason.isEmpty ? l10n.businessCapitalDefaultReason : reason,
+        reason: reason.isEmpty ? l10n.openingCashDefaultReason : reason,
         notes: notes.isNotEmpty ? notes : null,
         branchId: _branchId,
       );
@@ -169,7 +184,7 @@ class _BusinessCapitalCardState extends State<BusinessCapitalCard> {
         _saving = false;
       });
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.businessCapitalSaved)),
+        SnackBar(content: Text(l10n.openingCashSaved)),
       );
       getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
     } catch (e) {
@@ -243,6 +258,7 @@ class _BusinessCapitalCardState extends State<BusinessCapitalCard> {
     if (!_canView) return const SizedBox.shrink();
 
     final l10n = context.l10n;
+    final settings = _settings;
 
     return Card(
       child: Padding(
@@ -277,7 +293,7 @@ class _BusinessCapitalCardState extends State<BusinessCapitalCard> {
                             height: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Text(l10n.businessCapitalSet),
+                        : Text(l10n.openingCashSet),
                   ),
               ],
             ),
@@ -298,19 +314,20 @@ class _BusinessCapitalCardState extends State<BusinessCapitalCard> {
               )
             else if (_error != null)
               ErrorView(message: _error!, onRetry: _load)
-            else if (_settings != null) ...[
-              if (_settings!.financingSnapshot != null)
-                FinancingSnapshotPanel(
-                  snapshot: _settings!.financingSnapshot!,
-                  capitalAmount: _settings!.capitalAmount,
-                  currency: _settings!.currency,
-                )
-              else
-                Text(
-                  l10n.businessCapitalNotSet,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-            ],
+            else if (settings != null)
+              BusinessCapitalBreakdown(
+                businessCapital: settings.businessCapital,
+                inventoryAtCost: settings.inventoryAtCost,
+                cashOnHandRealized: settings.cashOnHandRealized,
+                openingCashBalance: settings.openingCashBalance,
+                currency: settings.currency,
+                showOpeningCash: true,
+              )
+            else
+              Text(
+                l10n.businessCapitalNotSet,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
           ],
         ),
       ),

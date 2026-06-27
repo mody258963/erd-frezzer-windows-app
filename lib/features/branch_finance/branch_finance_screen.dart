@@ -1,8 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/auth/auth_cubit.dart';
 import '../../core/auth/role_permissions.dart';
+import '../../core/events/app_refresh_bus.dart';
+import '../../core/logging/app_logger.dart';
 import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme/app_colors.dart';
@@ -53,6 +56,19 @@ class _BranchFinanceScreenState extends State<BranchFinanceScreen>
     final role = context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
     return RolePermissions.canPerform(AppAction.branchFinanceWrite, role);
   }
+
+  bool get _canEditEntries {
+    final role = context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
+    return RolePermissions.canPerform(AppAction.branchFinanceEntryEdit, role);
+  }
+
+  /// Inter-branch payments affect `period_cash_in/out` on both branches — refresh dashboard.
+  void _refreshDashboardCash() {
+    getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
+  }
+
+  bool _isPaymentEntry(Map<String, dynamic> entry) =>
+      '${entry['entry_type'] ?? ''}' == 'payment';
 
   Future<void> _load() async {
     setState(() {
@@ -131,6 +147,7 @@ class _BranchFinanceScreenState extends State<BranchFinanceScreen>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(context.l10n.branchPaymentSaved)),
       );
+      _refreshDashboardCash();
       await _load();
     } catch (e) {
       if (!mounted) return;
@@ -149,6 +166,165 @@ class _BranchFinanceScreenState extends State<BranchFinanceScreen>
         SnackBar(content: Text(context.l10n.branchEntrySettled)),
       );
       await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
+  Future<void> _editEntry(Map<String, dynamic> entry) async {
+    if (!_canEditEntries) return;
+    final l10n = context.l10n;
+    final id = '${entry['id']}';
+    final entryType = '${entry['entry_type'] ?? ''}';
+    final isPayment = entryType == 'payment';
+
+    final amount = TextEditingController(
+      text: entry['amount'] is num
+          ? (entry['amount'] as num).toStringAsFixed(2)
+          : '',
+    );
+    final description = TextEditingController(
+      text: '${entry['description'] ?? ''}',
+    );
+    final notes = TextEditingController(text: '${entry['notes'] ?? ''}');
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.editBranchFinanceEntry),
+        titlePadding: kDialogTitlePadding,
+        contentPadding: kDialogContentPadding,
+        actionsPadding: kDialogActionsPadding,
+        content: SizedBox(
+          width: 440,
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: spacedFormFields([
+                TextField(
+                  controller: amount,
+                  decoration: InputDecoration(labelText: l10n.amount),
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
+                  ),
+                ),
+                if (!isPayment)
+                  TextField(
+                    controller: description,
+                    decoration: InputDecoration(
+                      labelText: l10n.description,
+                    ),
+                  ),
+                TextField(
+                  controller: notes,
+                  decoration: InputDecoration(labelText: l10n.notesOptional),
+                  maxLines: 2,
+                ),
+              ]),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.save),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    final parsed = double.tryParse(amount.text.trim().replaceAll(',', ''));
+    if (parsed == null || parsed <= 0) return;
+
+    final body = <String, dynamic>{
+      'amount': parsed,
+      'notes': notes.text.trim(),
+    };
+    if (!isPayment) {
+      body['description'] = description.text.trim();
+    }
+
+    try {
+      await getIt<BranchFinanceRepository>().updateEntry(id, body);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.branchFinanceEntryUpdated)),
+      );
+      if (isPayment) _refreshDashboardCash();
+      await _load();
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final msg = AppLogger.apiResponseMessage(e) ?? AppLogger.dioMessage(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
+  Future<void> _voidEntry(Map<String, dynamic> entry) async {
+    if (!_canEditEntries) return;
+    final l10n = context.l10n;
+    final id = '${entry['id']}';
+    final isPayment = _isPaymentEntry(entry);
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.voidBranchFinanceEntryTitle),
+        titlePadding: kDialogTitlePadding,
+        contentPadding: kDialogContentPadding,
+        actionsPadding: kDialogActionsPadding,
+        content: Text(
+          l10n.voidBranchFinanceEntryHint,
+          style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.voidBranchFinanceEntry),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    try {
+      await getIt<BranchFinanceRepository>().voidEntry(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.branchFinanceEntryVoided)),
+      );
+      if (isPayment) _refreshDashboardCash();
+      await _load();
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final msg = AppLogger.apiResponseMessage(e) ?? AppLogger.dioMessage(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -306,8 +482,11 @@ class _BranchFinanceScreenState extends State<BranchFinanceScreen>
                         _LedgerTab(
                           entries: _entries,
                           canWrite: _canWrite,
+                          canEditEntries: _canEditEntries,
                           branchLabel: _branchLabel,
                           onSettle: _settleEntry,
+                          onEdit: _editEntry,
+                          onVoid: _voidEntry,
                           filterStatus: _filterStatus,
                           filterEntryType: _filterEntryType,
                           onFilterChanged: (status, type) {
@@ -455,8 +634,11 @@ class _LedgerTab extends StatelessWidget {
   const _LedgerTab({
     required this.entries,
     required this.canWrite,
+    required this.canEditEntries,
     required this.branchLabel,
     required this.onSettle,
+    required this.onEdit,
+    required this.onVoid,
     required this.filterStatus,
     required this.filterEntryType,
     required this.onFilterChanged,
@@ -464,11 +646,24 @@ class _LedgerTab extends StatelessWidget {
 
   final List<Map<String, dynamic>> entries;
   final bool canWrite;
+  final bool canEditEntries;
   final String Function(Map<String, dynamic>, String, String) branchLabel;
   final Future<void> Function(String id) onSettle;
+  final Future<void> Function(Map<String, dynamic> entry) onEdit;
+  final Future<void> Function(Map<String, dynamic> entry) onVoid;
   final String? filterStatus;
   final String? filterEntryType;
   final void Function(String? status, String? entryType) onFilterChanged;
+
+  static bool _isVoided(Map<String, dynamic> e) {
+    final v = e['voided_at'];
+    return v != null && '$v'.isNotEmpty;
+  }
+
+  static bool _isTransferLinked(Map<String, dynamic> e) =>
+      e['transfer_id'] != null ||
+      e['source_type'] == 'transfer' ||
+      e['transfer'] is Map;
 
   @override
   Widget build(BuildContext context) {
@@ -527,32 +722,73 @@ class _LedgerTab extends StatelessWidget {
                     );
                     final canSettle = canWrite &&
                         entryType == 'charge' &&
-                        status == 'open';
+                        status == 'open' &&
+                        !_isVoided(e);
+                    final isVoided = _isVoided(e);
+                    final canEdit = canEditEntries && !isVoided;
+                    final canVoidEntry =
+                        canEdit && !_isTransferLinked(e);
 
                     return Card(
                       margin: const EdgeInsets.only(bottom: 8),
                       child: ListTile(
                         title: Text('${e['entry_number'] ?? id}'),
-                        subtitle: Text(
-                          l10n.branchLedgerRow(
-                            debtor,
-                            creditor,
-                            formatMoney(
-                              context,
-                              e['amount'] is num ? e['amount'] as num : null,
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              l10n.branchLedgerRow(
+                                debtor,
+                                creditor,
+                                formatMoney(
+                                  context,
+                                  e['amount'] is num ? e['amount'] as num : null,
+                                ),
+                              ),
                             ),
-                          ),
+                            if (isVoided)
+                              Text(
+                                l10n.entryVoided,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .labelSmall
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .error,
+                                    ),
+                              ),
+                          ],
                         ),
                         trailing: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
                             StatusChip(
-                              label: localizeBranchEntryType(context, entryType),
-                              variant: entryType == 'payment'
-                                  ? StatusChipVariant.success
-                                  : StatusChipVariant.warning,
+                              label: isVoided
+                                  ? l10n.entryVoided
+                                  : localizeBranchEntryType(context, entryType),
+                              variant: isVoided
+                                  ? StatusChipVariant.warning
+                                  : entryType == 'payment'
+                                      ? StatusChipVariant.success
+                                      : StatusChipVariant.warning,
                             ),
                             const SizedBox(width: 6),
+                            if (canEdit)
+                              IconButton(
+                                tooltip: l10n.editBranchFinanceEntry,
+                                icon: const Icon(Icons.edit_outlined),
+                                onPressed: () => onEdit(e),
+                              ),
+                            if (canVoidEntry)
+                              IconButton(
+                                tooltip: l10n.voidBranchFinanceEntry,
+                                icon: Icon(
+                                  Icons.delete_outline,
+                                  color: Theme.of(context).colorScheme.error,
+                                ),
+                                onPressed: () => onVoid(e),
+                              ),
                             if (canSettle)
                               IconButton(
                                 tooltip: l10n.markSettled,

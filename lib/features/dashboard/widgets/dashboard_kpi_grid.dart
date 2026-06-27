@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/dashboard/dashboard_period.dart';
 import '../../../core/l10n/api_labels.dart';
 import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_colors.dart';
 import '../daily_profit.dart';
 import 'daily_profit_panel.dart';
+import '../dashboard_period_labels.dart';
 import '../dashboard_summary_utils.dart';
 
 class DashboardKpiGrid extends StatelessWidget {
   const DashboardKpiGrid({
     required this.summary,
+    required this.period,
     this.dailyProfit,
     super.key,
   });
 
   final Map<String, dynamic> summary;
+  final DashboardPeriod period;
   final DailyProfitMetrics? dailyProfit;
 
   @override
@@ -30,8 +34,15 @@ class DashboardKpiGrid extends StatelessWidget {
     final kpiTiles = <Widget>[
       if (dailyProfit == null)
         _KpiTile(
-          label: l10n.todaySales,
-          value: formatMoney(context, summary['today_sales'] as num?),
+          label: dashboardPeriodSalesLabel(context, period),
+          value: formatMoney(
+            context,
+            summaryPeriodNum(summary, 'net_sales') > 0
+                ? summaryPeriodNum(summary, 'net_sales')
+                : (period == DashboardPeriod.day
+                    ? summary['today_sales'] as num?
+                    : summaryPeriodNum(summary, 'revenue')),
+          ),
           icon: Icons.point_of_sale_rounded,
           color: scheme.primary,
         ),

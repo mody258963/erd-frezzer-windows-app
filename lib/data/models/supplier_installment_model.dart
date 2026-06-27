@@ -8,6 +8,7 @@ class SupplierInstallmentModel {
     this.installmentNo = 0,
     this.dueDate,
     this.status,
+    this.supplierId,
     this.supplierName,
     this.purchaseOrderId,
   });
@@ -20,6 +21,7 @@ class SupplierInstallmentModel {
   final int installmentNo;
   final String? dueDate;
   final String? status;
+  final String? supplierId;
   final String? supplierName;
   final String? purchaseOrderId;
 
@@ -47,6 +49,7 @@ class SupplierInstallmentModel {
       installmentNo: (json['installment_no'] as num?)?.toInt() ?? 0,
       dueDate: json['due_date'] as String?,
       status: json['status'] as String?,
+      supplierId: supplier?['id'] as String? ?? json['supplier_id'] as String?,
       supplierName: supplier?['name'] as String?,
       purchaseOrderId:
           purchase?['id'] as String? ?? json['purchase_id'] as String?,

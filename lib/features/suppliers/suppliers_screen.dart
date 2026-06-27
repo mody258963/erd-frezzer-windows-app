@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -11,11 +12,16 @@ import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/linked_balance_model.dart';
+import '../../data/models/supplier_installment_model.dart';
 import '../../data/models/supplier_model.dart';
 import '../../data/models/user_role.dart';
+import '../../data/repositories/installment_repository.dart';
 import '../../data/repositories/supplier_repository.dart';
 import '../../di/injection.dart';
+import '../../router/route_paths.dart';
 import '../customers/widgets/linked_balance_card.dart';
+import '../installments/pay_installment_dialog.dart';
+import 'pay_supplier_dialog.dart';
 import '../shared/entity_detail_widgets.dart';
 import '../shared/entity_list_tile.dart';
 import '../shared/form_field_spacing.dart';
@@ -74,180 +80,18 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
   }
 
   Future<void> _showDetail(BuildContext context, SupplierModel s) async {
-    final l10n = context.l10n;
-    double debt = s.outstandingBalance;
-    LinkedBalanceModel? linkedBalance;
-    SupplierModel supplier = s;
-    try {
-      supplier = await getIt<SupplierRepository>().get(s.id);
-      debt = await getIt<SupplierRepository>().debt(s.id);
-      try {
-        linkedBalance = await getIt<SupplierRepository>().linkedBalance(s.id);
-      } catch (_) {}
-    } catch (e) {
-      if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(e.toString())),
-      );
-      return;
-    }
-    if (!context.mounted) return;
-
-    final role = context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
-    final canEdit = RolePermissions.canPerform(AppAction.supplierCreate, role);
-    final canDelete = RolePermissions.canPerform(AppAction.supplierDelete, role);
-
     await showDialog<void>(
       context: context,
-      builder: (ctx) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                EntityProfileHeader(
-                  title: s.name,
-                  subtitle: s.contactPerson,
-                  leading: CircleAvatar(
-                    backgroundColor:
-                        Theme.of(ctx).colorScheme.primaryContainer,
-                    child: Icon(
-                      Icons.local_shipping_outlined,
-                      color: Theme.of(ctx).colorScheme.onPrimaryContainer,
-                    ),
-                  ),
-                  chips: [
-                    Chip(
-                      label: Text(s.isActive ? l10n.active : l10n.inactive),
-                      visualDensity: VisualDensity.compact,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: (debt > 0 ? AppColors.warning : AppColors.success)
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: (debt > 0 ? AppColors.warning : AppColors.success)
-                          .withValues(alpha: 0.35),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.payments_outlined,
-                        color: debt > 0 ? AppColors.warning : AppColors.success,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              l10n.supplierDebt,
-                              style: Theme.of(ctx).textTheme.bodySmall,
-                            ),
-                            Text(
-                              formatMoney(ctx, debt),
-                              style: Theme.of(ctx)
-                                  .textTheme
-                                  .titleLarge
-                                  ?.copyWith(fontWeight: FontWeight.w800),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                if (linkedBalance != null && linkedBalance.isLinked) ...[
-                  const SizedBox(height: 12),
-                  LinkedBalanceCard(
-                    linkedBalance: linkedBalance,
-                    showSupplierLink: false,
-                    onOpenCustomer: supplier.linkedCustomerId != null
-                        ? () {
-                            Navigator.pop(ctx);
-                            context.push('/customers/${supplier.linkedCustomerId}');
-                          }
-                        : null,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                DetailSectionCard(
-                  title: l10n.contactInfo,
-                  child: Column(
-                    children: [
-                      DetailField(
-                        icon: Icons.person_outline,
-                        label: l10n.contactPerson,
-                        value: s.contactPerson ?? '—',
-                      ),
-                      DetailField(
-                        icon: Icons.phone_outlined,
-                        label: l10n.phoneNumber,
-                        value: s.phone ?? '—',
-                      ),
-                      DetailField(
-                        icon: Icons.email_outlined,
-                        label: l10n.supplierEmail,
-                        value: s.email ?? '—',
-                      ),
-                      DetailField(
-                        icon: Icons.location_on_outlined,
-                        label: l10n.supplierAddress,
-                        value: s.address ?? '—',
-                      ),
-                      if (s.notes?.trim().isNotEmpty == true)
-                        DetailField(
-                          icon: Icons.notes_outlined,
-                          label: l10n.description,
-                          value: s.notes!,
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(ctx),
-                      child: Text(l10n.close),
-                    ),
-                    if (canEdit)
-                      TextButton(
-                        onPressed: () {
-                          Navigator.pop(ctx);
-                          _showForm(context, supplier: s);
-                        },
-                        child: Text(l10n.edit),
-                      ),
-                    if (canDelete)
-                      TextButton(
-                        onPressed: () async {
-                          Navigator.pop(ctx);
-                          await _delete(context, s.id);
-                        },
-                        child: Text(
-                          l10n.delete,
-                          style: TextStyle(
-                            color: Theme.of(ctx).colorScheme.error,
-                          ),
-                        ),
-                      ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+      builder: (ctx) => _SupplierDetailDialog(
+        supplier: s,
+        onEdit: (supplier) {
+          Navigator.pop(ctx);
+          _showForm(context, supplier: supplier);
+        },
+        onDelete: (id) async {
+          Navigator.pop(ctx);
+          await _delete(context, id);
+        },
       ),
     );
   }
@@ -496,6 +340,424 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                     ),
         ),
       ],
+    );
+  }
+}
+
+class _SupplierDetailDialog extends StatefulWidget {
+  const _SupplierDetailDialog({
+    required this.supplier,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final SupplierModel supplier;
+  final void Function(SupplierModel supplier) onEdit;
+  final Future<void> Function(String id) onDelete;
+
+  @override
+  State<_SupplierDetailDialog> createState() => _SupplierDetailDialogState();
+}
+
+class _SupplierDetailDialogState extends State<_SupplierDetailDialog> {
+  late SupplierModel _supplier;
+  double _debt = 0;
+  LinkedBalanceModel? _linkedBalance;
+  List<SupplierInstallmentModel> _installments = [];
+  bool _loading = true;
+  String? _payingId;
+
+  @override
+  void initState() {
+    super.initState();
+    _supplier = widget.supplier;
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() => _loading = true);
+    try {
+      final repo = getIt<SupplierRepository>();
+      final supplier = await repo.get(widget.supplier.id);
+      final debt = await repo.debt(widget.supplier.id);
+      LinkedBalanceModel? linkedBalance;
+      try {
+        linkedBalance = await repo.linkedBalance(widget.supplier.id);
+      } catch (_) {}
+      List<SupplierInstallmentModel> installments = [];
+      try {
+        installments = await getIt<InstallmentRepository>()
+            .listForSupplier(widget.supplier.id);
+      } catch (_) {}
+      if (!mounted) return;
+      setState(() {
+        _supplier = supplier;
+        _debt = debt;
+        _linkedBalance = linkedBalance;
+        _installments = installments;
+        _loading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _loading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
+  Future<void> _paySupplierLumpSum() async {
+    final l10n = context.l10n;
+    if (_debt <= 0) return;
+
+    final result = await PaySupplierDialog.show(
+      context,
+      supplierName: _supplier.name,
+      totalDebt: _debt,
+    );
+    if (result == null || !mounted) return;
+
+    setState(() => _payingId = _supplier.id);
+    try {
+      await getIt<SupplierRepository>().recordPayment(
+        _supplier.id,
+        paymentMethod: result.paymentMethod,
+        amount: result.payFullBalance ? null : result.amount,
+        notes: result.notes,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.supplierPaidSuccess),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+      await _load();
+      getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.response?.data?.toString() ?? e.toString())),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _payingId = null);
+    }
+  }
+
+  Future<void> _payInstallment(SupplierInstallmentModel inst) async {
+    final l10n = context.l10n;
+    if (!inst.canPay) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.installmentAlreadyPaid)),
+      );
+      return;
+    }
+
+    final result = await PayInstallmentDialog.show(context, inst);
+    if (result == null || !mounted) return;
+
+    setState(() => _payingId = inst.id);
+    try {
+      await getIt<InstallmentRepository>().pay(
+        inst.id,
+        paymentMethod: result.paymentMethod,
+        amount: result.payFullBalance ? null : result.amount,
+        notes: result.notes,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(l10n.installmentPaidSuccess),
+          backgroundColor: Colors.green.shade700,
+        ),
+      );
+      await _load();
+      getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
+    } on DioException catch (e) {
+      if (!mounted) return;
+      if (e.response?.statusCode == 422) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.installmentAlreadyPaid)),
+        );
+        await _load();
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    } finally {
+      if (mounted) setState(() => _payingId = null);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final s = _supplier;
+    final role = context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
+    final canEdit = RolePermissions.canPerform(AppAction.supplierCreate, role);
+    final canDelete = RolePermissions.canPerform(AppAction.supplierDelete, role);
+    final canPay = RolePermissions.canPerform(AppAction.installmentPay, role);
+
+    return Dialog(
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 520, maxHeight: 640),
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Flexible(
+                      child: SingleChildScrollView(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            EntityProfileHeader(
+                              title: s.name,
+                              subtitle: s.contactPerson,
+                              leading: CircleAvatar(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primaryContainer,
+                                child: Icon(
+                                  Icons.local_shipping_outlined,
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                ),
+                              ),
+                              chips: [
+                                Chip(
+                                  label: Text(s.isActive ? l10n.active : l10n.inactive),
+                                  visualDensity: VisualDensity.compact,
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Container(
+                              padding: const EdgeInsets.all(14),
+                              decoration: BoxDecoration(
+                                color: (_debt > 0 ? AppColors.warning : AppColors.success)
+                                    .withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: (_debt > 0
+                                          ? AppColors.warning
+                                          : AppColors.success)
+                                      .withValues(alpha: 0.35),
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.payments_outlined,
+                                    color: _debt > 0
+                                        ? AppColors.warning
+                                        : AppColors.success,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          l10n.supplierDebt,
+                                          style: Theme.of(context).textTheme.bodySmall,
+                                        ),
+                                        Text(
+                                          formatMoney(context, _debt),
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleLarge
+                                              ?.copyWith(fontWeight: FontWeight.w800),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  if (canPay && _debt > 0)
+                                    FilledButton(
+                                      onPressed: _payingId == _supplier.id
+                                          ? null
+                                          : _paySupplierLumpSum,
+                                      child: _payingId == _supplier.id
+                                          ? const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : Text(l10n.pay),
+                                    ),
+                                ],
+                              ),
+                            ),
+                            if (_installments.isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              DetailSectionCard(
+                                title: l10n.supplierUnpaidInstallments,
+                                child: Column(
+                                  children: [
+                                    for (final inst in _installments)
+                                      Padding(
+                                        padding: const EdgeInsets.only(bottom: 8),
+                                        child: Row(
+                                          children: [
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(
+                                                    formatMoney(
+                                                      context,
+                                                      inst.remainingBalance,
+                                                    ),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleSmall,
+                                                  ),
+                                                  Text(
+                                                    [
+                                                      if (inst.installmentNo > 0)
+                                                        '#${inst.installmentNo}',
+                                                      l10n.dueDate(inst.dueDate ?? '—'),
+                                                    ].join(' · '),
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall,
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            if (canPay && inst.canPay)
+                                              TextButton(
+                                                onPressed: _payingId == inst.id
+                                                    ? null
+                                                    : () => _payInstallment(inst),
+                                                child: _payingId == inst.id
+                                                    ? const SizedBox(
+                                                        width: 18,
+                                                        height: 18,
+                                                        child: CircularProgressIndicator(
+                                                          strokeWidth: 2,
+                                                        ),
+                                                      )
+                                                    : Text(l10n.payInstallmentLegacy),
+                                              ),
+                                          ],
+                                        ),
+                                      ),
+                                    Align(
+                                      alignment: AlignmentDirectional.centerEnd,
+                                      child: TextButton(
+                                        onPressed: () {
+                                          Navigator.pop(context);
+                                          context.push(
+                                            '${RoutePaths.suppliers}?tab=payables',
+                                          );
+                                        },
+                                        child: Text(l10n.viewAllInstallments),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                            if (_linkedBalance != null && _linkedBalance!.isLinked) ...[
+                              const SizedBox(height: 12),
+                              LinkedBalanceCard(
+                                linkedBalance: _linkedBalance!,
+                                showSupplierLink: false,
+                                onOpenCustomer: _supplier.linkedCustomerId != null
+                                    ? () {
+                                        Navigator.pop(context);
+                                        context.push(
+                                          '/customers/${_supplier.linkedCustomerId}',
+                                        );
+                                      }
+                                    : null,
+                              ),
+                            ],
+                            const SizedBox(height: 12),
+                            DetailSectionCard(
+                              title: l10n.contactInfo,
+                              child: Column(
+                                children: [
+                                  DetailField(
+                                    icon: Icons.person_outline,
+                                    label: l10n.contactPerson,
+                                    value: s.contactPerson ?? '—',
+                                  ),
+                                  DetailField(
+                                    icon: Icons.phone_outlined,
+                                    label: l10n.phoneNumber,
+                                    value: s.phone ?? '—',
+                                  ),
+                                  DetailField(
+                                    icon: Icons.email_outlined,
+                                    label: l10n.supplierEmail,
+                                    value: s.email ?? '—',
+                                  ),
+                                  DetailField(
+                                    icon: Icons.location_on_outlined,
+                                    label: l10n.supplierAddress,
+                                    value: s.address ?? '—',
+                                  ),
+                                  if (s.notes?.trim().isNotEmpty == true)
+                                    DetailField(
+                                      icon: Icons.notes_outlined,
+                                      label: l10n.description,
+                                      value: s.notes!,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(l10n.close),
+                        ),
+                        if (canEdit)
+                          TextButton(
+                            onPressed: () => widget.onEdit(s),
+                            child: Text(l10n.edit),
+                          ),
+                        if (canDelete)
+                          TextButton(
+                            onPressed: () => widget.onDelete(s.id),
+                            child: Text(
+                              l10n.delete,
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                            ),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+        ),
+      ),
     );
   }
 }

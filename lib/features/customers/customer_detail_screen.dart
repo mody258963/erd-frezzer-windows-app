@@ -11,14 +11,17 @@ import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/printer/printer_print_helper.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/dashboard/dashboard_period.dart';
 import '../../core/utils/balance_parse.dart';
-import '../../core/utils/business_week.dart';
+import '../../core/utils/business_period.dart';
 import '../../data/models/customer_model.dart';
+import '../../data/models/dashboard_period_info.dart';
 import '../../data/models/invoice_model.dart';
 import '../../data/models/linked_balance_model.dart';
 import '../../data/models/supplier_model.dart';
 import '../../data/models/user_role.dart';
 import '../../data/repositories/customer_repository.dart';
+import '../../data/repositories/dashboard_repository.dart';
 import '../../data/repositories/supplier_repository.dart';
 import '../../di/injection.dart';
 import '../dashboard/widgets/dashboard_section.dart';
@@ -29,6 +32,7 @@ import '../shared/page_header.dart';
 import '../shared/settlement_cycle_dropdown.dart';
 import 'collect_payment_dialog.dart';
 import 'edit_payment_dialog.dart';
+import 'customer_week_statement.dart';
 import 'offset_supplier_dialog.dart';
 import 'widgets/linked_balance_card.dart';
 
@@ -67,6 +71,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
   List<InvoiceModel> _invoices = [];
   LinkedBalanceModel? _linkedBalance;
   List<Map<String, dynamic>> _payments = [];
+  DashboardPeriodInfo? _weekPeriod;
   String? _error;
   bool _loading = true;
   bool _viewThisWeek = true;
@@ -111,6 +116,13 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       try {
         payments = await repo.payments(widget.customerId);
       } catch (_) {}
+      DashboardPeriodInfo? weekPeriod;
+      try {
+        final weekSummary = await getIt<DashboardRepository>().summary(
+          period: DashboardPeriod.week,
+        );
+        weekPeriod = DashboardPeriodInfo.fromJson(weekSummary['period']);
+      } catch (_) {}
       if (!mounted) return;
       setState(() {
         _customer = customer;
@@ -118,6 +130,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
         _invoices = invoices;
         _linkedBalance = linked;
         _payments = payments;
+        _weekPeriod = weekPeriod;
         _loading = false;
       });
     } catch (e) {
@@ -129,33 +142,39 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
     }
   }
 
-  DateTimeRange get _weekRange => BusinessWeek.rangeFor(DateTime.now());
+  DateTimeRange? get _weekRange => BusinessPeriod.rangeFromInfo(_weekPeriod);
 
   String _formatDate(String? raw) {
     if (raw == null || raw.isEmpty) return '—';
     final dt = DateTime.tryParse(raw);
     if (dt == null) return raw;
-    return BusinessWeek.isoDate(dt.toLocal());
+    return BusinessPeriod.isoDate(dt.toLocal());
   }
 
   String _weekRangeLabel(BuildContext context) {
     final l10n = context.l10n;
+    final range = _weekRange;
+    if (range == null) return l10n.customerViewThisWeek;
     return l10n.customerWeekRange(
-      _formatDate(_weekRange.start.toIso8601String()),
-      _formatDate(_weekRange.end.toIso8601String()),
+      _formatDate(range.start.toIso8601String()),
+      _formatDate(range.end.toIso8601String()),
     );
   }
 
   bool _isOpenThisWeek(InvoiceModel inv) {
     if (inv.isSettled) return false;
-    return BusinessWeek.isWithinWeek(inv.createdAt, _weekRange);
+    final range = _weekRange;
+    if (range == null) return false;
+    return BusinessPeriod.isWithin(inv.createdAt, range.start, range.end);
   }
 
   bool _isHistory(InvoiceModel inv) {
     if (inv.isSettled) return true;
-    final dt = BusinessWeek.parseInvoiceDate(inv.createdAt);
+    final range = _weekRange;
+    if (range == null) return false;
+    final dt = BusinessPeriod.parseDate(inv.createdAt);
     if (dt == null) return false;
-    return dt.isBefore(_weekRange.start);
+    return dt.isBefore(range.start);
   }
 
   List<InvoiceModel> get _filteredInvoices {
@@ -222,6 +241,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       );
       await _load();
       getIt<AppRefreshBus>().notify(AppRefreshKind.settlements);
+      getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -270,6 +290,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       );
       await _load();
       getIt<AppRefreshBus>().notify(AppRefreshKind.settlements);
+      getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
       getIt<AppRefreshBus>().notify(AppRefreshKind.invoices);
     } catch (e) {
       if (!context.mounted) return;
@@ -306,7 +327,38 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
 
   Future<void> _printWeekInvoices(BuildContext context) async {
     final l10n = context.l10n;
-    final weekInvoices = _invoices.where(_isOpenThisWeek).toList();
+    final customer = _customer;
+    if (customer == null) return;
+    final weekInvoices = openInvoicesThisWeek(_invoices, weekPeriod: _weekPeriod);
+    if (weekInvoices.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.customerNoWeekInvoices)),
+      );
+      return;
+    }
+    try {
+      final statement = buildCustomerWeekStatement(
+        customerName: customer.name,
+        customerPhone: customer.phone,
+        weekInvoices: weekInvoices,
+        paymentsCollected: sumWeekCashPayments(_payments, weekPeriod: _weekPeriod),
+      );
+      await printCustomerWeeklyStatement(statement);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.weekStatementPrinted)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.printFailed(e.toString()))),
+      );
+    }
+  }
+
+  Future<void> _printWeekInvoicesDetailed(BuildContext context) async {
+    final l10n = context.l10n;
+    final weekInvoices = openInvoicesThisWeek(_invoices, weekPeriod: _weekPeriod);
     if (weekInvoices.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(l10n.customerNoWeekInvoices)),
@@ -582,6 +634,11 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                             onPressed: () => _printWeekInvoices(context),
                             icon: const Icon(Icons.print_outlined),
                             label: Text(l10n.printWeekInvoices),
+                          ),
+                        if (_viewThisWeek)
+                          TextButton(
+                            onPressed: () => _printWeekInvoicesDetailed(context),
+                            child: Text(l10n.printWeekInvoicesDetailed),
                           ),
                       ],
                     ),

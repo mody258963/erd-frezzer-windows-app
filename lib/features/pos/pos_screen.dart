@@ -11,6 +11,7 @@ import '../../core/events/app_refresh_bus.dart';
 import '../../core/connectivity/connectivity_cubit.dart';
 import '../../core/settings/settings_service.dart';
 import '../../data/repositories/catalog_sync_repository.dart';
+import '../../core/layout/app_breakpoints.dart';
 import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme/app_colors.dart';
@@ -19,7 +20,10 @@ import '../../core/printer/services/printer_service.dart';
 import '../../core/utils/sale_quantity.dart';
 import '../../data/local/app_database.dart';
 import '../../data/models/branch_model.dart';
+import '../../data/repositories/dashboard_repository.dart';
+import '../../data/repositories/installment_repository.dart';
 import '../../data/repositories/invoice_repository.dart';
+import '../../data/repositories/settlement_repository.dart';
 import '../../di/injection.dart';
 import '../shared/branch_dropdown.dart';
 import '../shared/page_scaffold.dart';
@@ -309,9 +313,13 @@ class _PosScreenState extends State<PosScreen> {
               break;
             }
           }
+          final screenSize = MediaQuery.sizeOf(context);
+          final posDisplay = AppBreakpoints.isPosDisplay(screenSize);
+          final pagePadding = posDisplay ? 8.0 : (screenSize.width < 1024 ? 12.0 : 16.0);
           return PageScaffold(
             title: l10n.posTitle,
-            subtitle: l10n.posSubtitle,
+            subtitle: posDisplay ? null : l10n.posSubtitle,
+            dense: posDisplay,
             scrollable: false,
             actions: [
               if (_catalogSyncing)
@@ -319,44 +327,42 @@ class _PosScreenState extends State<PosScreen> {
                   padding: const EdgeInsets.only(right: 4),
                   child: Tooltip(
                     message: l10n.syncing,
-                    child: const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
+                    child: SizedBox(
+                      width: posDisplay ? 18 : 22,
+                      height: posDisplay ? 18 : 22,
+                      child: const CircularProgressIndicator(strokeWidth: 2),
                     ),
                   ),
                 ),
               _PrintDaySalesButton(
                 branchId: branchId,
                 branchName: branchName,
+                iconOnly: posDisplay,
               ),
             ],
             padding: EdgeInsets.fromLTRB(
-              16,
-              12,
-              16,
-              MediaQuery.sizeOf(context).width < 1024 ? 12 : 24,
+              pagePadding,
+              posDisplay ? 8 : 12,
+              pagePadding,
+              pagePadding,
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (canPickBranch) ...[
-                  SizedBox(
-                    width: 320,
-                    child: BranchDropdown(
-                      branches: _branches,
-                      value: branchId,
-                      label: l10n.branch,
-                      onChanged: (v) async {
-                        if (v == null) return;
-                        await getIt<SettingsService>().setPosBranchId(v);
-                        if (!context.mounted) return;
-                        setState(() => _posBranchId = v);
-                        unawaited(_syncPosCatalogBackground(v));
-                      },
-                    ),
+                  BranchDropdown(
+                    branches: _branches,
+                    value: branchId,
+                    label: l10n.branch,
+                    onChanged: (v) async {
+                      if (v == null) return;
+                      await getIt<SettingsService>().setPosBranchId(v);
+                      if (!context.mounted) return;
+                      setState(() => _posBranchId = v);
+                      unawaited(_syncPosCatalogBackground(v));
+                    },
                   ),
-                  const SizedBox(height: 12),
+                  SizedBox(height: posDisplay ? 6 : 12),
                 ],
                 Expanded(
                   child: _PosLayout(
@@ -413,18 +419,21 @@ class _PosLayoutState extends State<_PosLayout>
     final l10n = context.l10n;
     return LayoutBuilder(
       builder: (context, constraints) {
-        final compact = constraints.maxWidth < 1024 ||
-            constraints.maxHeight < 720;
+        final size = Size(constraints.maxWidth, constraints.maxHeight);
+        final compact = AppBreakpoints.isCompact(size);
+        final ultraCompact = AppBreakpoints.isPosDisplay(size);
         final partsPanel = _PosPartsPanel(
           search: widget.search,
           searchFocus: widget.searchFocus,
           state: widget.state,
           branchId: widget.branchId,
+          ultraCompact: ultraCompact,
         );
         final cartPanel = _PosCartPanel(
           state: widget.state,
           branchId: widget.branchId,
           compact: compact,
+          ultraCompact: ultraCompact,
         );
 
         if (compact) {
@@ -441,16 +450,39 @@ class _PosLayoutState extends State<_PosLayout>
               children: [
                 TabBar(
                   controller: _tabController,
-                  tabs: [
-                    Tab(text: l10n.searchScanBarcode),
-                    Tab(
-                      text: widget.state.lines.isEmpty
-                          ? l10n.cart
-                          : '${l10n.cart} (${widget.state.lines.length})',
-                    ),
-                  ],
+                  isScrollable: ultraCompact,
+                  tabAlignment: ultraCompact ? TabAlignment.start : TabAlignment.fill,
+                  labelStyle: ultraCompact
+                      ? Theme.of(context).textTheme.labelMedium
+                      : null,
+                  tabs: ultraCompact
+                      ? [
+                          Tab(
+                            height: 40,
+                            icon: const Icon(Icons.qr_code_scanner, size: 20),
+                            text: l10n.searchScanBarcode,
+                          ),
+                          Tab(
+                            height: 40,
+                            icon: Badge(
+                              isLabelVisible: widget.state.lines.isNotEmpty,
+                              label: Text('${widget.state.lines.length}'),
+                              child: const Icon(Icons.shopping_cart_outlined,
+                                  size: 20),
+                            ),
+                            text: l10n.cart,
+                          ),
+                        ]
+                      : [
+                          Tab(text: l10n.searchScanBarcode),
+                          Tab(
+                            text: widget.state.lines.isEmpty
+                                ? l10n.cart
+                                : '${l10n.cart} (${widget.state.lines.length})',
+                          ),
+                        ],
                 ),
-                const SizedBox(height: 8),
+                SizedBox(height: ultraCompact ? 4 : 8),
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
@@ -484,12 +516,14 @@ class _PosPartsPanel extends StatelessWidget {
     required this.searchFocus,
     required this.state,
     required this.branchId,
+    this.ultraCompact = false,
   });
 
   final TextEditingController search;
   final FocusNode searchFocus;
   final PosState state;
   final String branchId;
+  final bool ultraCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -501,13 +535,23 @@ class _PosPartsPanel extends StatelessWidget {
           controller: search,
           focusNode: searchFocus,
           decoration: InputDecoration(
-            labelText: l10n.searchScanBarcode,
-            prefixIcon: const Icon(Icons.qr_code_scanner),
+            labelText: ultraCompact ? null : l10n.searchScanBarcode,
+            hintText: ultraCompact ? l10n.searchScanBarcode : null,
+            prefixIcon: Icon(
+              Icons.qr_code_scanner,
+              size: ultraCompact ? 20 : 24,
+            ),
             isDense: true,
+            contentPadding: ultraCompact
+                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 10)
+                : null,
           ),
+          style: ultraCompact
+              ? Theme.of(context).textTheme.bodyMedium
+              : null,
           onChanged: (q) => context.read<PosBloc>().add(PosSearch(q)),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: ultraCompact ? 4 : 8),
         Expanded(
           child: Card(
             margin: EdgeInsets.zero,
@@ -529,20 +573,36 @@ class _PosPartsPanel extends StatelessWidget {
                       final p = state.searchResults[i];
                       return ListTile(
                         dense: true,
-                        visualDensity: VisualDensity.compact,
+                        visualDensity: ultraCompact
+                            ? VisualDensity.compact
+                            : VisualDensity.compact,
+                        contentPadding: ultraCompact
+                            ? const EdgeInsets.symmetric(horizontal: 8)
+                            : null,
                         leading: PartNetworkImage(
                           imageUrl: p.imageUrl,
-                          width: 40,
-                          height: 40,
+                          width: ultraCompact ? 32 : 40,
+                          height: ultraCompact ? 32 : 40,
                         ),
                         title: Text(
                           '${p.code} — ${p.name}',
-                          maxLines: 2,
+                          maxLines: ultraCompact ? 1 : 2,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontWeight: FontWeight.w500),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w500,
+                            fontSize: ultraCompact ? 12 : 14,
+                          ),
                         ),
-                        subtitle: Text('${l10n.price}: ${p.sellPrice}'),
-                        trailing: const Icon(Icons.add_circle_outline),
+                        subtitle: Text(
+                          '${l10n.price}: ${p.sellPrice}',
+                          style: ultraCompact
+                              ? Theme.of(context).textTheme.labelSmall
+                              : null,
+                        ),
+                        trailing: Icon(
+                          Icons.add_circle_outline,
+                          size: ultraCompact ? 20 : 24,
+                        ),
                         onTap: () {
                           context.read<PosBloc>().add(PosAddLine(p, branchId));
                           search.clear();
@@ -563,11 +623,13 @@ class _PosCartPanel extends StatefulWidget {
     required this.state,
     required this.branchId,
     this.compact = false,
+    this.ultraCompact = false,
   });
 
   final PosState state;
   final String branchId;
   final bool compact;
+  final bool ultraCompact;
 
   @override
   State<_PosCartPanel> createState() => _PosCartPanelState();
@@ -609,35 +671,40 @@ class _PosCartPanelState extends State<_PosCartPanel> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final compact = widget.compact;
-    final saleOptions = _PosSaleOptions(state: state);
+    final ultraCompact = widget.ultraCompact;
+    final saleOptions = _PosSaleOptions(
+      state: state,
+      ultraCompact: ultraCompact,
+    );
     return Card(
       margin: EdgeInsets.zero,
       child: Padding(
-        padding: EdgeInsets.all(compact ? 8 : 12),
+        padding: EdgeInsets.all(ultraCompact ? 6 : (compact ? 8 : 12)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    l10n.cart,
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
+            if (!ultraCompact)
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      l10n.cart,
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
                   ),
-                ),
-                if (state.lines.isNotEmpty)
-                  Text(
-                    '${state.lines.length}',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
-              ],
-            ),
-            SizedBox(height: compact ? 6 : 8),
+                  if (state.lines.isNotEmpty)
+                    Text(
+                      '${state.lines.length}',
+                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                ],
+              ),
+            if (!ultraCompact) SizedBox(height: compact ? 6 : 8),
             if (compact)
               Theme(
                 data: Theme.of(context)
@@ -680,6 +747,7 @@ class _PosCartPanelState extends State<_PosCartPanel> {
                       itemBuilder: (context, i) => _CartLineTile(
                         line: state.lines[i],
                         compact: compact,
+                        ultraCompact: ultraCompact,
                       ),
                     ),
             ),
@@ -688,6 +756,7 @@ class _PosCartPanelState extends State<_PosCartPanel> {
               branchId: widget.branchId,
               amountPaidCtrl: _amountPaidCtrl,
               compact: compact,
+              ultraCompact: ultraCompact,
             ),
           ],
         ),
@@ -719,9 +788,13 @@ class _PosCartPanelState extends State<_PosCartPanel> {
 }
 
 class _PosSaleOptions extends StatelessWidget {
-  const _PosSaleOptions({required this.state});
+  const _PosSaleOptions({
+    required this.state,
+    this.ultraCompact = false,
+  });
 
   final PosState state;
+  final bool ultraCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -738,6 +811,9 @@ class _PosSaleOptions extends StatelessWidget {
           decoration: InputDecoration(
             labelText: l10n.customer,
             isDense: true,
+            contentPadding: ultraCompact
+                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+                : null,
           ),
           items: state.customers
               .map(
@@ -749,33 +825,42 @@ class _PosSaleOptions extends StatelessWidget {
               .toList(),
           onChanged: (v) => context.read<PosBloc>().add(PosSetCustomer(v)),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: ultraCompact ? 6 : 8),
         SegmentedButton<String>(
-          style: const ButtonStyle(
+          style: ButtonStyle(
             visualDensity: VisualDensity.compact,
             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            textStyle: ultraCompact
+                ? WidgetStatePropertyAll(
+                    Theme.of(context).textTheme.labelSmall,
+                  )
+                : null,
           ),
           segments: [
             ButtonSegment(
               value: 'cash',
               label: Text(l10n.cash),
-              icon: const Icon(Icons.payments_outlined, size: 16),
+              icon: Icon(Icons.payments_outlined,
+                  size: ultraCompact ? 14 : 16),
             ),
             ButtonSegment(
               value: 'credit',
               label: Text(l10n.credit),
-              icon: const Icon(Icons.credit_card, size: 16),
+              icon: Icon(Icons.credit_card, size: ultraCompact ? 14 : 16),
             ),
           ],
           selected: {state.paymentType},
           onSelectionChanged: (s) =>
               context.read<PosBloc>().add(PosSetPayment(s.first)),
         ),
-        const SizedBox(height: 8),
+        SizedBox(height: ultraCompact ? 6 : 8),
         TextField(
           decoration: InputDecoration(
             labelText: l10n.discount,
             isDense: true,
+            contentPadding: ultraCompact
+                ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+                : null,
           ),
           keyboardType: TextInputType.number,
           onChanged: (v) => context.read<PosBloc>().add(
@@ -793,12 +878,16 @@ class _PosCheckoutFooter extends StatelessWidget {
     required this.branchId,
     required this.amountPaidCtrl,
     this.compact = false,
+    this.ultraCompact = false,
   });
 
   final PosState state;
   final String branchId;
   final TextEditingController amountPaidCtrl;
   final bool compact;
+  final bool ultraCompact;
+
+  double get _gap => ultraCompact ? 3 : (compact ? 4 : 6);
 
   @override
   Widget build(BuildContext context) {
@@ -808,22 +897,29 @@ class _PosCheckoutFooter extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       children: [
         const Divider(height: 1),
-        SizedBox(height: compact ? 4 : 6),
+        SizedBox(height: _gap),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(l10n.subtotal),
+            Text(
+              l10n.subtotal,
+              style: ultraCompact
+                  ? Theme.of(context).textTheme.bodyMedium
+                  : null,
+            ),
             Text(
               state.subtotal.toStringAsFixed(2),
-              style: Theme.of(context).textTheme.titleSmall,
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontSize: ultraCompact ? 13 : null,
+                  ),
             ),
           ],
         ),
-        SizedBox(height: compact ? 4 : 6),
+        SizedBox(height: _gap),
         Container(
           padding: EdgeInsets.symmetric(
-            horizontal: 10,
-            vertical: compact ? 6 : 8,
+            horizontal: ultraCompact ? 8 : 10,
+            vertical: ultraCompact ? 4 : (compact ? 6 : 8),
           ),
           decoration: BoxDecoration(
             color: AppColors.primaryContainer,
@@ -837,6 +933,7 @@ class _PosCheckoutFooter extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: AppColors.onPrimaryContainer,
                       fontWeight: FontWeight.w700,
+                      fontSize: ultraCompact ? 13 : null,
                     ),
               ),
               Text(
@@ -844,18 +941,22 @@ class _PosCheckoutFooter extends StatelessWidget {
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: AppColors.onPrimaryContainer,
                       fontWeight: FontWeight.w800,
+                      fontSize: ultraCompact ? 15 : null,
                     ),
               ),
             ],
           ),
         ),
         if (state.isCash && state.lines.isNotEmpty) ...[
-          SizedBox(height: compact ? 6 : 8),
+          SizedBox(height: ultraCompact ? 4 : (compact ? 6 : 8)),
           TextField(
             decoration: InputDecoration(
               labelText: l10n.amountReceived,
               isDense: true,
               suffixText: 'EGP',
+              contentPadding: ultraCompact
+                  ? const EdgeInsets.symmetric(horizontal: 10, vertical: 8)
+                  : null,
             ),
             keyboardType: const TextInputType.numberWithOptions(
               decimal: true,
@@ -869,10 +970,10 @@ class _PosCheckoutFooter extends StatelessWidget {
           ),
           if (state.amountPaid >= state.total && state.total > 0)
             Container(
-              margin: EdgeInsets.only(top: compact ? 6 : 8),
+              margin: EdgeInsets.only(top: ultraCompact ? 4 : (compact ? 6 : 8)),
               padding: EdgeInsets.symmetric(
-                horizontal: 10,
-                vertical: compact ? 6 : 8,
+                horizontal: ultraCompact ? 8 : 10,
+                vertical: ultraCompact ? 4 : (compact ? 6 : 8),
               ),
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.12),
@@ -923,17 +1024,34 @@ class _PosCheckoutFooter extends StatelessWidget {
             ),
           ),
         ],
-        SizedBox(height: compact ? 6 : 10),
+        SizedBox(height: ultraCompact ? 4 : (compact ? 6 : 10)),
         Row(
           children: [
-            OutlinedButton(
-              onPressed: () =>
-                  context.read<PosBloc>().add(const PosClearCart()),
-              child: Text(l10n.clear),
-            ),
-            const SizedBox(width: 8),
+            ultraCompact
+                ? IconButton(
+                    tooltip: l10n.clear,
+                    onPressed: () =>
+                        context.read<PosBloc>().add(const PosClearCart()),
+                    icon: const Icon(Icons.clear_all, size: 20),
+                  )
+                : OutlinedButton(
+                    onPressed: () =>
+                        context.read<PosBloc>().add(const PosClearCart()),
+                    child: Text(l10n.clear),
+                  ),
+            SizedBox(width: ultraCompact ? 4 : 8),
             Expanded(
               child: FilledButton.icon(
+                style: ultraCompact
+                    ? FilledButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 10,
+                        ),
+                        textStyle:
+                            Theme.of(context).textTheme.labelLarge,
+                      )
+                    : null,
                 onPressed: state.completing ||
                         state.lines.isEmpty ||
                         !state.canCompleteCash
@@ -942,17 +1060,22 @@ class _PosCheckoutFooter extends StatelessWidget {
                         .read<PosBloc>()
                         .add(PosComplete(branchId)),
                 icon: state.completing
-                    ? const SizedBox(
-                        height: 16,
-                        width: 16,
-                        child: CircularProgressIndicator(
+                    ? SizedBox(
+                        height: ultraCompact ? 14 : 16,
+                        width: ultraCompact ? 14 : 16,
+                        child: const CircularProgressIndicator(
                           strokeWidth: 2,
                           color: AppColors.onPrimary,
                         ),
                       )
-                    : const Icon(Icons.check_circle_outline, size: 18),
+                    : Icon(
+                        Icons.check_circle_outline,
+                        size: ultraCompact ? 16 : 18,
+                      ),
                 label: Text(
                   state.completing ? l10n.processing : l10n.completeSale,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
             ),
@@ -967,16 +1090,18 @@ class _CartLineTile extends StatelessWidget {
   const _CartLineTile({
     required this.line,
     this.compact = false,
+    this.ultraCompact = false,
   });
 
   final PosLine line;
   final bool compact;
+  final bool ultraCompact;
 
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
+      padding: EdgeInsets.symmetric(vertical: ultraCompact ? 2 : 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -986,10 +1111,10 @@ class _CartLineTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   '${line.code} — ${line.name}',
-                  maxLines: 2,
+                  maxLines: ultraCompact ? 1 : 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
+                  style: TextStyle(
+                    fontSize: ultraCompact ? 12 : 13,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -998,10 +1123,13 @@ class _CartLineTile extends StatelessWidget {
                 tooltip: l10n.removeFromCart,
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
+                constraints: BoxConstraints(
+                  minWidth: ultraCompact ? 28 : 32,
+                  minHeight: ultraCompact ? 28 : 32,
+                ),
                 icon: Icon(
                   Icons.delete_outline,
-                  size: 20,
+                  size: ultraCompact ? 18 : 20,
                   color: Theme.of(context).colorScheme.error,
                 ),
                 onPressed: () => context
@@ -1010,14 +1138,15 @@ class _CartLineTile extends StatelessWidget {
               ),
             ],
           ),
-          Text(
-            '${l10n.available}: ${formatSaleQuantity(line.available, unit: line.unit)}'
-            '${line.unit != null && line.unit!.isNotEmpty ? ' ${localizePartUnitLabel(context, line.unit!, line.unit!)}' : ''}',
-            style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-          ),
-          const SizedBox(height: 4),
+          if (!ultraCompact)
+            Text(
+              '${l10n.available}: ${formatSaleQuantity(line.available, unit: line.unit)}'
+              '${line.unit != null && line.unit!.isNotEmpty ? ' ${localizePartUnitLabel(context, line.unit!, line.unit!)}' : ''}',
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+          SizedBox(height: ultraCompact ? 2 : 4),
           Row(
             children: [
               Expanded(
@@ -1026,14 +1155,19 @@ class _CartLineTile extends StatelessWidget {
                   partId: line.partId,
                   unitPrice: line.unitPrice,
                   label: l10n.price,
+                  ultraCompact: ultraCompact,
                 ),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: ultraCompact ? 2 : 4),
               IconButton(
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                icon: const Icon(Icons.remove_circle_outline, size: 20),
+                constraints: BoxConstraints(
+                  minWidth: ultraCompact ? 28 : 32,
+                  minHeight: ultraCompact ? 28 : 32,
+                ),
+                icon: Icon(Icons.remove_circle_outline,
+                    size: ultraCompact ? 18 : 20),
                 onPressed: () => context.read<PosBloc>().add(
                       PosUpdateQty(
                         line.partId,
@@ -1047,13 +1181,18 @@ class _CartLineTile extends StatelessWidget {
                   partId: line.partId,
                   quantity: line.quantity,
                   unit: line.unit,
+                  ultraCompact: ultraCompact,
                 ),
               ),
               IconButton(
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
-                icon: const Icon(Icons.add_circle_outline, size: 20),
+                constraints: BoxConstraints(
+                  minWidth: ultraCompact ? 28 : 32,
+                  minHeight: ultraCompact ? 28 : 32,
+                ),
+                icon: Icon(Icons.add_circle_outline,
+                    size: ultraCompact ? 18 : 20),
                 onPressed: () => context.read<PosBloc>().add(
                       PosUpdateQty(
                         line.partId,
@@ -1061,11 +1200,12 @@ class _CartLineTile extends StatelessWidget {
                       ),
                     ),
               ),
-              const SizedBox(width: 4),
+              SizedBox(width: ultraCompact ? 2 : 4),
               Text(
                 line.lineTotal.toStringAsFixed(2),
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w700,
+                      fontSize: ultraCompact ? 12 : null,
                     ),
               ),
             ],
@@ -1081,11 +1221,13 @@ class _CartLinePriceField extends StatefulWidget {
     required this.partId,
     required this.unitPrice,
     required this.label,
+    this.ultraCompact = false,
   });
 
   final String partId;
   final double unitPrice;
   final String label;
+  final bool ultraCompact;
 
   @override
   State<_CartLinePriceField> createState() => _CartLinePriceFieldState();
@@ -1132,11 +1274,14 @@ class _CartLinePriceFieldState extends State<_CartLinePriceField> {
       controller: _controller,
       textDirection: TextDirection.ltr,
       keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      style: const TextStyle(fontSize: 13),
+      style: TextStyle(fontSize: widget.ultraCompact ? 12 : 13),
       decoration: InputDecoration(
         isDense: true,
         labelText: widget.label,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: widget.ultraCompact ? 6 : 8,
+          vertical: widget.ultraCompact ? 6 : 8,
+        ),
       ),
       onFieldSubmitted: (_) => _commit(),
       onEditingComplete: _commit,
@@ -1150,11 +1295,13 @@ class _CartLineQtyField extends StatefulWidget {
     required this.partId,
     required this.quantity,
     this.unit,
+    this.ultraCompact = false,
   });
 
   final String partId;
   final double quantity;
   final String? unit;
+  final bool ultraCompact;
 
   @override
   State<_CartLineQtyField> createState() => _CartLineQtyFieldState();
@@ -1214,12 +1361,18 @@ class _CartLineQtyFieldState extends State<_CartLineQtyField> {
       keyboardType: TextInputType.numberWithOptions(
         decimal: isFractionalSaleUnit(widget.unit),
       ),
-      style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+      style: TextStyle(
+        fontSize: widget.ultraCompact ? 12 : 13,
+        fontWeight: FontWeight.w700,
+      ),
       decoration: InputDecoration(
         isDense: true,
         labelText: l10n.quantity,
         suffixText: unitLabel,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
+        contentPadding: EdgeInsets.symmetric(
+          horizontal: widget.ultraCompact ? 4 : 6,
+          vertical: widget.ultraCompact ? 6 : 8,
+        ),
       ),
       onFieldSubmitted: (_) => _commit(),
       onEditingComplete: _commit,
@@ -1232,10 +1385,12 @@ class _PrintDaySalesButton extends StatefulWidget {
   const _PrintDaySalesButton({
     required this.branchId,
     this.branchName,
+    this.iconOnly = false,
   });
 
   final String branchId;
   final String? branchName;
+  final bool iconOnly;
 
   @override
   State<_PrintDaySalesButton> createState() => _PrintDaySalesButtonState();
@@ -1249,21 +1404,26 @@ class _PrintDaySalesButtonState extends State<_PrintDaySalesButton> {
     final l10n = context.l10n;
     setState(() => _printing = true);
     try {
-      final report = await loadDailySalesReport(
+      final report = await loadDailyDrawerReport(
         invoiceRepository: getIt<InvoiceRepository>(),
         database: getIt<AppDatabase>(),
         connectivity: getIt<ConnectivityCubit>(),
+        dashboardRepository: getIt<DashboardRepository>(),
+        settlementRepository: getIt<SettlementRepository>(),
+        installmentRepository: getIt<InstallmentRepository>(),
         branchId: widget.branchId,
         branchName: widget.branchName,
       );
       if (!mounted) return;
-      if (report.lines.isEmpty) {
+      if (report.cashSalesTotal <= 0 &&
+          report.collections.isEmpty &&
+          report.drawerTotal == 0) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(l10n.noDaySales)),
         );
         return;
       }
-      await printDailySalesReport(report);
+      await printDailyDrawerReport(report);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -1289,6 +1449,19 @@ class _PrintDaySalesButtonState extends State<_PrintDaySalesButton> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    if (widget.iconOnly) {
+      return IconButton.filledTonal(
+        tooltip: l10n.printDaySales,
+        onPressed: _printing ? null : _print,
+        icon: _printing
+            ? const SizedBox(
+                width: 18,
+                height: 18,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              )
+            : const Icon(Icons.print_outlined, size: 20),
+      );
+    }
     return FilledButton.tonalIcon(
       onPressed: _printing ? null : _print,
       icon: _printing

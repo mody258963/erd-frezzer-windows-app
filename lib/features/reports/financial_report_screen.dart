@@ -8,12 +8,11 @@ import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/branch_model.dart';
-import '../../data/models/capital_model.dart';
 import '../../data/repositories/report_repository.dart';
 import '../../di/injection.dart';
 import '../../router/route_paths.dart';
 import '../shared/branch_dropdown.dart';
-import '../shared/financing_snapshot_panel.dart';
+import '../shared/business_capital_breakdown.dart';
 import '../shared/loading_error.dart';
 import '../shared/page_header.dart';
 
@@ -213,12 +212,30 @@ class _FinancialReportScreenState extends State<FinancialReportScreen> {
                 ),
           ),
           const SizedBox(height: 8),
-          FinancingSnapshotPanel(
-            snapshot: FinancingSnapshot.fromJson(capital),
-            capitalAmount: capital['capital_amount'] is num
-                ? (capital['capital_amount'] as num).toDouble()
-                : double.tryParse('${capital['capital_amount']}'),
-            currency: '${capital['capital_currency'] ?? capital['currency'] ?? 'EGP'}',
+          BusinessCapitalBreakdown(
+            businessCapital: _capitalNum(
+              capital['business_capital'] ?? capital['capital_amount'],
+            ),
+            inventoryAtCost: _capitalNum(
+              capital['inventory_at_cost'] ??
+                  (capital['financing_snapshot'] is Map
+                      ? (capital['financing_snapshot']
+                          as Map)['inventory_at_cost']
+                      : null),
+            ),
+            cashOnHandRealized: _capitalNum(
+              capital['cash_on_hand_realized'] ??
+                  (capital['financing_snapshot'] is Map
+                      ? (capital['financing_snapshot']
+                          as Map)['cash_on_hand_realized']
+                      : null),
+            ),
+            openingCashBalance: capital['opening_cash_balance'] != null
+                ? _capitalNum(capital['opening_cash_balance'])
+                : null,
+            currency:
+                '${capital['capital_currency'] ?? capital['currency'] ?? 'EGP'}',
+            showOpeningCash: capital['opening_cash_balance'] != null,
           ),
           const SizedBox(height: 20),
         ],
@@ -430,4 +447,9 @@ class _SummaryTile extends StatelessWidget {
       ),
     );
   }
+}
+
+double _capitalNum(dynamic v) {
+  if (v is num) return v.toDouble();
+  return double.tryParse('$v') ?? 0;
 }

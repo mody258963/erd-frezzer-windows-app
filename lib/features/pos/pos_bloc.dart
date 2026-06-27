@@ -251,6 +251,15 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     return s;
   }
 
+  String? _defaultCustomerId(List<Customer> customers) {
+    if (customers.isEmpty) return null;
+    for (final c in customers) {
+      final name = c.name.trim();
+      if (name == 'نقدي' || name.toLowerCase() == 'cash') return c.id;
+    }
+    return customers.first.id;
+  }
+
   Future<void> _onLoad(PosLoad event, Emitter<PosState> emit) async {
     if (!event.silent) {
       emit(state.copyWith(loading: true, error: null));
@@ -261,8 +270,7 @@ class PosBloc extends Bloc<PosEvent, PosState> {
       emit(state.copyWith(
         loading: false,
         customers: customers,
-        customerId: state.customerId ??
-            (customers.isNotEmpty ? customers.first.id : null),
+        customerId: state.customerId ?? _defaultCustomerId(customers),
         searchResults: parts,
       ));
     } catch (e) {

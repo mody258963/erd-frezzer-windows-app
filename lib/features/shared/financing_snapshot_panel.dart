@@ -63,13 +63,20 @@ class FinancingSnapshotPanel extends StatelessWidget {
         AppColors.primary,
       ),
       _FinTile(
-        l10n.capitalEstimatedAvailable,
-        money(snapshot.estimatedAvailable),
+        l10n.cashOnHandRealized,
+        money(snapshot.cashOnHandRealized),
         Icons.savings_outlined,
-        snapshot.estimatedAvailable >= 0
-            ? AppColors.success
-            : Theme.of(context).colorScheme.error,
+        AppColors.success,
       ),
+      if (snapshot.estimatedAvailable > 0 &&
+          (snapshot.estimatedAvailable - snapshot.cashOnHandRealized).abs() >
+              0.02)
+        _FinTile(
+          l10n.legacyEstimatedAvailable,
+          money(snapshot.estimatedAvailable),
+          Icons.info_outline,
+          Theme.of(context).colorScheme.onSurfaceVariant,
+        ),
     ];
 
     if (compact) {

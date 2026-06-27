@@ -44,4 +44,10 @@ class TransferRepository {
   Future<void> cancel(String id) async {
     await _dio.patch('/transfers/$id/cancel');
   }
+
+  /// Undo a completed transfer — stock returns to source branch (admin only).
+  Future<Map<String, dynamic>> reverse(String id) async {
+    final r = await _dio.patch<dynamic>('/transfers/$id/reverse');
+    return parseObject(r.data);
+  }
 }

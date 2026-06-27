@@ -304,9 +304,11 @@ class _PurchaseCreateDialogState extends State<PurchaseCreateDialog> {
                             Expanded(
                               child: TextField(
                                 controller: _qtyControllers[i],
+                                textDirection: TextDirection.ltr,
+                                textAlign: TextAlign.center,
                                 decoration: InputDecoration(
                                   labelText: l10n.qty,
-                                  suffixText: _lines[i].unit != null
+                                  helperText: _lines[i].unit != null
                                       ? localizePartUnitLabel(
                                           context,
                                           _lines[i].unit!,
@@ -324,6 +326,8 @@ class _PurchaseCreateDialogState extends State<PurchaseCreateDialog> {
                             Expanded(
                               child: TextField(
                                 controller: _costControllers[i],
+                                textDirection: TextDirection.ltr,
+                                textAlign: TextAlign.center,
                                 decoration:
                                     InputDecoration(labelText: l10n.unitCost),
                                 keyboardType:

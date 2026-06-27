@@ -9,6 +9,7 @@ class PageScaffold extends StatelessWidget {
     this.actions,
     this.scrollable = true,
     this.padding = const EdgeInsets.all(24),
+    this.dense = false,
   });
 
   final String? title;
@@ -17,6 +18,7 @@ class PageScaffold extends StatelessWidget {
   final Widget child;
   final bool scrollable;
   final EdgeInsets padding;
+  final bool dense;
 
   @override
   Widget build(BuildContext context) {
@@ -39,9 +41,15 @@ class PageScaffold extends StatelessWidget {
                       if (title != null)
                         Text(
                           title!,
-                          style: Theme.of(context).textTheme.headlineSmall,
+                          maxLines: dense ? 1 : null,
+                          overflow: dense ? TextOverflow.ellipsis : null,
+                          style: dense
+                              ? Theme.of(context).textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
+                                  )
+                              : Theme.of(context).textTheme.headlineSmall,
                         ),
-                      if (subtitle != null) ...[
+                      if (subtitle != null && !dense) ...[
                         const SizedBox(height: 4),
                         Text(
                           subtitle!,
@@ -64,7 +72,7 @@ class PageScaffold extends StatelessWidget {
     final body = Padding(
       padding: EdgeInsets.fromLTRB(
         padding.left,
-        header != null ? 16 : padding.top,
+        header != null ? (dense ? 8 : 16) : padding.top,
         padding.right,
         padding.bottom,
       ),

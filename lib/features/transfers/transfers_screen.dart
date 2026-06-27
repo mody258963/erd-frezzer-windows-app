@@ -1,8 +1,11 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../core/auth/auth_cubit.dart';
 import '../../core/auth/role_permissions.dart';
+import '../../core/events/app_refresh_bus.dart';
+import '../../core/logging/app_logger.dart';
 import '../../core/l10n/api_labels.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/utils/sale_quantity.dart';
@@ -258,6 +261,61 @@ class _TransfersScreenState extends State<TransfersScreen> {
     }
   }
 
+  Future<void> _reverseTransfer(BuildContext context, String id) async {
+    final l10n = context.l10n;
+    final role = context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
+    if (!RolePermissions.canPerform(AppAction.transferReverse, role)) return;
+
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(l10n.reverseTransferTitle),
+        titlePadding: kDialogTitlePadding,
+        contentPadding: kDialogContentPadding,
+        actionsPadding: kDialogActionsPadding,
+        content: Text(
+          l10n.reverseTransferHint,
+          style: Theme.of(ctx).textTheme.bodyMedium?.copyWith(height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text(l10n.cancel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text(l10n.reverseTransfer),
+          ),
+        ],
+      ),
+    );
+
+    if (ok != true) return;
+
+    try {
+      await getIt<TransferRepository>().reverse(id);
+      if (!context.mounted) return;
+      getIt<AppRefreshBus>().notify(AppRefreshKind.inventory);
+      getIt<AppRefreshBus>().notify(AppRefreshKind.catalog);
+      getIt<AppRefreshBus>().notify(AppRefreshKind.dashboard);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(l10n.transferReversed)),
+      );
+      await _load();
+    } on DioException catch (e) {
+      if (!context.mounted) return;
+      final msg = AppLogger.apiResponseMessage(e) ?? AppLogger.dioMessage(e);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg)),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString())),
+      );
+    }
+  }
+
   Future<void> _editTransfer(BuildContext context, String id) async {
     final l10n = context.l10n;
     final role = context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
@@ -384,6 +442,7 @@ class _TransfersScreenState extends State<TransfersScreen> {
     final canCreate = RolePermissions.canPerform(AppAction.transferCreate, role);
     final canCancel = RolePermissions.canPerform(AppAction.transferCancel, role);
     final canEdit = RolePermissions.canPerform(AppAction.transferEdit, role);
+    final canReverse = RolePermissions.canPerform(AppAction.transferReverse, role);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -451,11 +510,27 @@ class _TransfersScreenState extends State<TransfersScreen> {
                                       ),
                                   ],
                                 )
-                              : StatusChip(
-                                  label: localizeApiStatus(context, status),
-                                  variant: status == 'completed'
-                                      ? StatusChipVariant.success
-                                      : StatusChipVariant.warning,
+                              : Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (status == 'completed' && canReverse)
+                                      IconButton(
+                                        tooltip: l10n.reverseTransfer,
+                                        icon: const Icon(Icons.undo_outlined),
+                                        onPressed: () => _reverseTransfer(
+                                          context,
+                                          id,
+                                        ),
+                                      ),
+                                    StatusChip(
+                                      label: localizeApiStatus(context, status),
+                                      variant: status == 'completed'
+                                          ? StatusChipVariant.success
+                                          : status == 'reversed'
+                                              ? StatusChipVariant.warning
+                                              : StatusChipVariant.warning,
+                                    ),
+                                  ],
                                 ),
                         );
                       },
@@ -902,12 +977,14 @@ class _TransferFormDialogState extends State<_TransferFormDialog> {
                             ),
                           ),
                           SizedBox(
-                            width: 88,
+                            width: 110,
                             child: TextField(
                               controller: _qtyControllers[i],
+                              textDirection: TextDirection.ltr,
+                              textAlign: TextAlign.center,
                               decoration: InputDecoration(
                                 labelText: l10n.qty,
-                                suffixText: _lines[i].unit != null
+                                helperText: _lines[i].unit != null
                                     ? localizePartUnitLabel(
                                         context,
                                         _lines[i].unit!,
@@ -922,9 +999,11 @@ class _TransferFormDialogState extends State<_TransferFormDialog> {
                           ),
                           const SizedBox(width: 8),
                           SizedBox(
-                            width: 96,
+                            width: 110,
                             child: TextField(
                               controller: _unitCostControllers[i],
+                              textDirection: TextDirection.ltr,
+                              textAlign: TextAlign.center,
                               decoration: InputDecoration(
                                 labelText: l10n.unitCost,
                               ),

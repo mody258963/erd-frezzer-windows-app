@@ -18,6 +18,28 @@ class InstallmentRepository {
     return parseList(r.data, SupplierInstallmentModel.fromJson);
   }
 
+  /// Unpaid installments for one supplier (`?supplier_id=` or client filter).
+  Future<List<SupplierInstallmentModel>> listForSupplier(String supplierId) async {
+    try {
+      final r = await _dio.get<dynamic>(
+        '/installments',
+        queryParameters: {'supplier_id': supplierId},
+      );
+      final rows = parseList(r.data, SupplierInstallmentModel.fromJson);
+      if (rows.isNotEmpty) {
+        return rows.where((i) => i.canPay).toList();
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode != 404 && e.response?.statusCode != 422) {
+        rethrow;
+      }
+    }
+    final all = await list();
+    return all
+        .where((i) => i.supplierId == supplierId && i.canPay)
+        .toList();
+  }
+
   Future<void> pay(
     String id, {
     required String paymentMethod,

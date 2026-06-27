@@ -8,6 +8,7 @@ import '../../core/auth/role_permissions.dart';
 import '../../core/branch/branch_filter_cubit.dart';
 import '../../core/connectivity/connectivity_cubit.dart';
 import '../../core/connectivity/connectivity_state.dart';
+import '../../core/layout/app_breakpoints.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme/app_colors.dart';
 import '../../data/models/user_model.dart';
@@ -37,50 +38,62 @@ class AppShell extends StatelessWidget {
             );
             final location = GoRouterState.of(context).uri.path;
             final l10n = context.l10n;
-            return Scaffold(
-              body: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _TopBar(
-                    isOnline: conn.isOnline,
-                    user: user,
-                    onSync: conn.isOnline
-                        ? () => getIt<SyncBloc>().add(const SyncEvent())
-                        : null,
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final size = Size(constraints.maxWidth, constraints.maxHeight);
+                final narrow = AppBreakpoints.isNarrow(size);
+                return Scaffold(
+                  body: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      _TopBar(
+                        isOnline: conn.isOnline,
+                        user: user,
+                        narrow: narrow,
+                        onSync: conn.isOnline
+                            ? () => getIt<SyncBloc>().add(const SyncEvent())
+                            : null,
+                      ),
+                      if (!conn.isOnline)
+                        MaterialBanner(
+                          content: Text(l10n.offlineBanner),
+                          leading: const Icon(Icons.cloud_off),
+                          actions: [
+                            TextButton(
+                              onPressed: () => ScaffoldMessenger.of(
+                                context,
+                              ).hideCurrentMaterialBanner(),
+                              child: Text(l10n.dismiss),
+                            ),
+                          ],
+                        ),
+                      Expanded(
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          textDirection: Directionality.of(context),
+                          children: [
+                            _NavRail(
+                              destinations: destinations,
+                              location: location,
+                              narrow: narrow,
+                            ),
+                            const VerticalDivider(width: 1, thickness: 1),
+                            Expanded(
+                              child: ColoredBox(
+                                color: AppColors.surface,
+                                child: ShellContentPanel(
+                                  padding: EdgeInsets.all(narrow ? 8 : 16),
+                                  child: child,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  if (!conn.isOnline)
-                    MaterialBanner(
-                      content: Text(l10n.offlineBanner),
-                      leading: const Icon(Icons.cloud_off),
-                      actions: [
-                        TextButton(
-                          onPressed: () => ScaffoldMessenger.of(context)
-                              .hideCurrentMaterialBanner(),
-                          child: Text(l10n.dismiss),
-                        ),
-                      ],
-                    ),
-                  Expanded(
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      textDirection: Directionality.of(context),
-                      children: [
-                        _NavRail(
-                          destinations: destinations,
-                          location: location,
-                        ),
-                        const VerticalDivider(width: 1, thickness: 1),
-                        Expanded(
-                          child: ColoredBox(
-                            color: AppColors.surface,
-                            child: ShellContentPanel(child: child),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
+                );
+              },
             );
           },
         );
@@ -93,12 +106,15 @@ class _NavRail extends StatelessWidget {
   const _NavRail({
     required this.destinations,
     required this.location,
+    this.narrow = false,
   });
 
   static const double _width = 272;
+  static const double _narrowWidth = 72;
 
   final List<NavDestination> destinations;
   final String location;
+  final bool narrow;
 
   int _selectedIndex() {
     if (location.startsWith(RoutePaths.settings)) {
@@ -131,78 +147,101 @@ class _NavRail extends StatelessWidget {
     final selected = _selectedIndex();
     final theme = Theme.of(context);
     return SizedBox(
-      width: _width,
+      width: narrow ? _narrowWidth : _width,
       child: Material(
         color: AppColors.navRailBackground,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Center(child: AppLogo(size: 88)),
-                  const SizedBox(height: 12),
-                  Text(
-                    l10n.appTitle,
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: AppColors.navRailSelected,
-                      fontWeight: FontWeight.w800,
-                      height: 1.25,
+            if (narrow)
+              const SizedBox(height: 8)
+            else
+              Padding(
+                padding: const EdgeInsetsDirectional.fromSTEB(20, 24, 20, 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Center(child: AppLogo(size: 88)),
+                    const SizedBox(height: 12),
+                    Text(
+                      l10n.appTitle,
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: AppColors.navRailSelected,
+                        fontWeight: FontWeight.w800,
+                        height: 1.25,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-            Divider(
-              height: 1,
-              thickness: 1,
-              color: AppColors.navRailForeground.withValues(alpha: 0.2),
-            ),
+            if (!narrow)
+              Divider(
+                height: 1,
+                thickness: 1,
+                color: AppColors.navRailForeground.withValues(alpha: 0.2),
+              ),
             Expanded(
               child: ListView.separated(
-                padding: const EdgeInsetsDirectional.symmetric(
-                  vertical: 12,
-                  horizontal: 12,
+                padding: EdgeInsetsDirectional.symmetric(
+                  vertical: narrow ? 8 : 12,
+                  horizontal: narrow ? 8 : 12,
                 ),
                 itemCount: destinations.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 4),
+                separatorBuilder: (_, __) => SizedBox(height: narrow ? 2 : 4),
                 itemBuilder: (context, i) {
                   final d = destinations[i];
                   return _NavItem(
                     label: navLabel(context, d.labelKey),
+                    icon: IconData(d.icon, fontFamily: 'MaterialIcons'),
                     selected: i == selected,
+                    narrow: narrow,
                     onTap: () => context.go(d.path),
                   );
                 },
               ),
             ),
             Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(12, 8, 12, 20),
-              child: TextButton(
-                onPressed: () async {
-                  await context.read<AuthCubit>().signOut();
-                  if (context.mounted) context.go(RoutePaths.login);
-                },
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.navRailForeground,
-                  padding: const EdgeInsetsDirectional.symmetric(
-                    vertical: 14,
-                    horizontal: 16,
-                  ),
-                  alignment: AlignmentDirectional.centerStart,
-                ),
-                child: Text(
-                  l10n.logout,
-                  textAlign: TextAlign.start,
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.navRailForeground,
-                  ),
-                ),
+              padding: EdgeInsetsDirectional.fromSTEB(
+                narrow ? 8 : 12,
+                8,
+                narrow ? 8 : 12,
+                narrow ? 12 : 20,
               ),
+              child: narrow
+                  ? Tooltip(
+                      message: l10n.logout,
+                      child: IconButton(
+                        onPressed: () async {
+                          await context.read<AuthCubit>().signOut();
+                          if (context.mounted) context.go(RoutePaths.login);
+                        },
+                        icon: const Icon(Icons.logout),
+                        color: AppColors.navRailForeground,
+                      ),
+                    )
+                  : TextButton(
+                      onPressed: () async {
+                        await context.read<AuthCubit>().signOut();
+                        if (context.mounted) context.go(RoutePaths.login);
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.navRailForeground,
+                        padding: const EdgeInsetsDirectional.symmetric(
+                          vertical: 14,
+                          horizontal: 16,
+                        ),
+                        alignment: AlignmentDirectional.centerStart,
+                      ),
+                      child: Text(
+                        l10n.logout,
+                        textAlign: TextAlign.start,
+                        style: theme.textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.navRailForeground,
+                        ),
+                      ),
+                    ),
             ),
           ],
         ),
@@ -216,15 +255,47 @@ class _NavItem extends StatelessWidget {
     required this.label,
     required this.selected,
     required this.onTap,
+    this.icon,
+    this.narrow = false,
   });
 
   final String label;
+  final IconData? icon;
   final bool selected;
+  final bool narrow;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    if (narrow && icon != null) {
+      return Tooltip(
+        message: label,
+        child: Material(
+          color: selected
+              ? AppColors.navRailIndicator.withValues(alpha: 0.35)
+              : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(10),
+            child: SizedBox(
+              height: 44,
+              child: Center(
+                child: Icon(
+                  icon,
+                  size: 22,
+                  color: selected
+                      ? AppColors.navRailSelected
+                      : AppColors.navRailForeground,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
 
     return Material(
       color: selected
@@ -266,11 +337,13 @@ class _TopBar extends StatefulWidget {
   const _TopBar({
     required this.isOnline,
     required this.user,
+    this.narrow = false,
     this.onSync,
   });
 
   final bool isOnline;
   final UserModel user;
+  final bool narrow;
   final VoidCallback? onSync;
 
   @override
@@ -292,7 +365,10 @@ class _TopBarState extends State<_TopBar> {
     final user = widget.user;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      padding: EdgeInsets.symmetric(
+        horizontal: widget.narrow ? 12 : 20,
+        vertical: widget.narrow ? 6 : 10,
+      ),
       decoration: const BoxDecoration(
         color: AppColors.primary,
         boxShadow: [
@@ -318,16 +394,18 @@ class _TopBarState extends State<_TopBar> {
                   mainAxisSize: MainAxisSize.min,
                   textDirection: Directionality.of(context),
                   children: [
-                    const AppLogo(size: 44),
-                    const SizedBox(width: 12),
-                    Text(
-                      l10n.appTitle,
-                      textAlign: TextAlign.start,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            color: AppColors.onPrimary,
-                            fontWeight: FontWeight.w700,
-                          ),
-                    ),
+                    AppLogo(size: widget.narrow ? 32 : 44),
+                    if (!widget.narrow) ...[
+                      const SizedBox(width: 12),
+                      Text(
+                        l10n.appTitle,
+                        textAlign: TextAlign.start,
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: AppColors.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
                   ],
                 ),
                 StatusChip(
@@ -336,18 +414,20 @@ class _TopBarState extends State<_TopBar> {
                       ? StatusChipVariant.success
                       : StatusChipVariant.warning,
                 ),
-                if (user.canSelectBranch)
+                if (!widget.narrow && user.canSelectBranch)
                   const _AdminBranchFilter()
-                else if (user.branchName != null &&
+                else if (!widget.narrow &&
+                    user.branchName != null &&
                     user.branchName!.isNotEmpty)
                   _InfoChip(
                     icon: Icons.store,
                     label: '${l10n.branch}: ${user.branchName}',
                   ),
-                _InfoChip(
-                  icon: Icons.person,
-                  label: '${user.name} · ${user.role.name}',
-                ),
+                if (!widget.narrow)
+                  _InfoChip(
+                    icon: Icons.person,
+                    label: '${user.name} · ${user.role.name}',
+                  ),
               ],
             ),
           ),
@@ -356,16 +436,26 @@ class _TopBarState extends State<_TopBar> {
             textDirection: Directionality.of(context),
             children: [
               if (widget.onSync != null)
-                FilledButton.tonalIcon(
-                  onPressed: widget.onSync,
-                  style: FilledButton.styleFrom(
-                    backgroundColor: AppColors.onPrimary.withValues(alpha: 0.15),
-                    foregroundColor: AppColors.onPrimary,
-                  ),
-                  icon: const Icon(Icons.sync, size: 18),
-                  label: Text(l10n.sync),
-                ),
-              if (widget.onSync != null) const SizedBox(width: 8),
+                widget.narrow
+                    ? IconButton(
+                        tooltip: l10n.sync,
+                        onPressed: widget.onSync,
+                        icon: const Icon(Icons.sync, size: 20),
+                        color: AppColors.onPrimary,
+                      )
+                    : FilledButton.tonalIcon(
+                        onPressed: widget.onSync,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.onPrimary.withValues(
+                            alpha: 0.15,
+                          ),
+                          foregroundColor: AppColors.onPrimary,
+                        ),
+                        icon: const Icon(Icons.sync, size: 18),
+                        label: Text(l10n.sync),
+                      ),
+              if (widget.onSync != null && !widget.narrow)
+                const SizedBox(width: 8),
               IconButton(
                 tooltip: l10n.settingsTitle,
                 onPressed: () => context.go(RoutePaths.settings),
@@ -401,18 +491,18 @@ class _AdminBranchFilter extends StatelessWidget {
                   : l10n.branchFilterLabel,
             ),
             deleteIcon: const Icon(Icons.close, size: 16),
-            onDeleted: () =>
-                context.read<BranchFilterCubit>().clearFilter(),
-            labelStyle: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.onPrimary,
-                ),
+            onDeleted: () => context.read<BranchFilterCubit>().clearFilter(),
+            labelStyle: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: AppColors.onPrimary),
             backgroundColor: AppColors.onPrimary.withValues(alpha: 0.12),
             deleteIconColor: AppColors.onPrimary,
             side: BorderSide.none,
           );
         }
 
-        final dropdownValue = filter.selectedBranchId != null &&
+        final dropdownValue =
+            filter.selectedBranchId != null &&
                 filter.branches.any((b) => b.id == filter.selectedBranchId)
             ? filter.selectedBranchId
             : null;
@@ -433,9 +523,9 @@ class _AdminBranchFilter extends StatelessWidget {
                 color: AppColors.onPrimary.withValues(alpha: 0.9),
               ),
               dropdownColor: AppColors.primary,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: AppColors.onPrimary,
-                  ),
+              style: Theme.of(
+                context,
+              ).textTheme.labelMedium?.copyWith(color: AppColors.onPrimary),
               items: [
                 DropdownMenuItem<String?>(
                   value: null,
@@ -467,7 +557,10 @@ class _InfoChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsetsDirectional.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: 10,
+        vertical: 4,
+      ),
       decoration: BoxDecoration(
         color: AppColors.onPrimary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
@@ -476,14 +569,18 @@ class _InfoChip extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         textDirection: Directionality.of(context),
         children: [
-          Icon(icon, size: 14, color: AppColors.onPrimary.withValues(alpha: 0.9)),
+          Icon(
+            icon,
+            size: 14,
+            color: AppColors.onPrimary.withValues(alpha: 0.9),
+          ),
           const SizedBox(width: 6),
           Text(
             label,
             textAlign: TextAlign.start,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                  color: AppColors.onPrimary,
-                ),
+            style: Theme.of(
+              context,
+            ).textTheme.labelMedium?.copyWith(color: AppColors.onPrimary),
           ),
         ],
       ),

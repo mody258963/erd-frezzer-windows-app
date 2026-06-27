@@ -9,7 +9,10 @@ import '../../core/l10n/l10n_extension.dart';
 import '../../core/l10n/report_labels.dart';
 import '../../core/printer/printer_print_helper.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/utils/business_week.dart';
+import '../../core/dashboard/dashboard_period.dart';
+import '../../core/utils/business_period.dart';
+import '../../data/models/dashboard_period_info.dart';
+import '../../data/repositories/dashboard_repository.dart';
 import '../../data/models/invoice_model.dart';
 import '../../data/repositories/invoice_repository.dart';
 import '../../data/repositories/report_repository.dart';
@@ -43,12 +46,32 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     super.initState();
     final now = DateTime.now();
     _range = widget.kind == ReportKind.sales
-        ? BusinessWeek.rangeFor(now)
+        ? DateTimeRange(
+            start: DateTime(now.year, now.month, now.day),
+            end: now,
+          )
         : DateTimeRange(
             start: DateTime(now.year, now.month, 1),
             end: now,
           );
     getIt<AppRefreshBus>().addListener(_onAppRefresh);
+    if (widget.kind == ReportKind.sales) {
+      _loadSalesWeekRange();
+    }
+  }
+
+  Future<void> _loadSalesWeekRange() async {
+    try {
+      final summary = await getIt<DashboardRepository>().summary(
+        period: DashboardPeriod.week,
+      );
+      final period = DashboardPeriodInfo.fromJson(summary['period']);
+      final range = BusinessPeriod.rangeFromInfo(period);
+      if (range != null && mounted) {
+        setState(() => _range = range);
+        if (_loaded) _load();
+      }
+    } catch (_) {}
   }
 
   @override
@@ -170,7 +193,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
   }
 
   void _setThisWeekRange() {
-    setState(() => _range = BusinessWeek.rangeFor(DateTime.now()));
+    if (widget.kind == ReportKind.sales) {
+      _loadSalesWeekRange();
+    } else {
+      final now = DateTime.now();
+      setState(() => _range = DateTimeRange(
+            start: DateTime(now.year, now.month, 1),
+            end: now,
+          ));
+    }
   }
 
   Future<void> _printSalesReport() async {

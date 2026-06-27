@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/auth/auth_cubit.dart';
+import '../../core/auth/role_context.dart';
+import '../../core/auth/role_permissions.dart';
 import '../../core/branch/branch_filter_cubit.dart';
 import '../../core/branch/branch_filter_scope.dart';
 import '../../core/catalog/catalog_refresh_scheduler.dart';
@@ -78,6 +80,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
+    final canCreate = context.canPerform(AppAction.customerCreate);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -94,11 +97,12 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
           actions: [
             IconButton(onPressed: _load, icon: const Icon(Icons.refresh)),
-            FilledButton.icon(
-              onPressed: () => _showForm(context),
-              icon: const Icon(Icons.add),
-              label: Text(l10n.newCustomer),
-            ),
+            if (canCreate)
+              FilledButton.icon(
+                onPressed: () => _showForm(context),
+                icon: const Icon(Icons.add),
+                label: Text(l10n.newCustomer),
+              ),
           ],
         ),
         Expanded(

@@ -57,7 +57,10 @@ GoRouter createAppRouter() {
       }
 
       if (loggingIn) {
-        return isOnline ? RoutePaths.dashboard : RoutePaths.pos;
+        return RolePermissions.homeRoute(
+          auth.user!.role,
+          isOnline: isOnline,
+        );
       }
 
       if (!isOnline && !RolePermissions.isOfflineAllowed(path)) {
@@ -66,7 +69,7 @@ GoRouter createAppRouter() {
 
       final role = auth.user!.role;
       if (!RolePermissions.canAccessRoute(path, role)) {
-        return RoutePaths.dashboard;
+        return RolePermissions.homeRoute(role, isOnline: isOnline);
       }
 
       return null;

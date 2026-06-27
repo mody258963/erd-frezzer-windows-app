@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+
 import '../../../core/auth/role_permissions.dart';
 import '../../../core/branch/branch_filter_scope.dart';
 import '../../../core/events/app_refresh_bus.dart';
@@ -13,7 +14,7 @@ import '../../../di/injection.dart';
 import '../../shared/form_field_spacing.dart';
 import '../../shared/loading_error.dart';
 
-/// Admin-only owner withdrawal from realized profit.
+/// Admin-only owner withdrawal from realized profit (not opening cash).
 class OwnerCashOutCard extends StatefulWidget {
   const OwnerCashOutCard({required this.role, super.key});
 
@@ -37,7 +38,7 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
     super.initState();
     if (_canCashOut) {
       getIt<AppRefreshBus>().addListener(_onRefresh);
-      _load();
+      WidgetsBinding.instance.addPostFrameCallback((_) => _load());
     }
   }
 
@@ -50,16 +51,19 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
   }
 
   void _onRefresh(AppRefreshKind kind) {
-    if (!mounted || kind != AppRefreshKind.branchFilter) return;
-    _load();
+    if (!mounted) return;
+    if (kind == AppRefreshKind.branchFilter ||
+        kind == AppRefreshKind.dashboard) {
+      _load();
+    }
   }
 
   String? get _branchId => apiBranchIdFromContext(context);
 
-  double get _withdrawable =>
-      _settings?.profitWithdrawal?.withdrawableProfit ?? 0;
+  double get _withdrawable => _settings?.withdrawableProfit ?? 0;
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -89,7 +93,7 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
       if (!mounted) return;
       await showDialog<void>(
         context: context,
-        builder: (ctx) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: Text(l10n.ownerCashOutHistory),
           content: SizedBox(
             width: 480,
@@ -99,7 +103,7 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
                 : ListView.separated(
                     itemCount: rows.length,
                     separatorBuilder: (_, __) => const Divider(height: 1),
-                    itemBuilder: (context, i) {
+                    itemBuilder: (_, i) {
                       final r = rows[i];
                       final amount = r['amount'];
                       final at = r['created_at'] as String? ?? '';
@@ -128,7 +132,7 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(ctx),
+              onPressed: () => Navigator.pop(dialogContext),
               child: Text(l10n.close),
             ),
           ],
@@ -143,6 +147,7 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
   }
 
   Future<void> _confirmCashOut() async {
+    if (!mounted) return;
     final l10n = context.l10n;
     final settings = _settings;
     if (settings == null) return;
@@ -155,85 +160,128 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
       return;
     }
 
+    final currency = settings.currency;
+    final withdrawableText = '${formatMoney(context, maxAmount)} $currency';
+    final realizedText =
+        '${formatMoney(context, settings.realizedProfit)} $currency';
+    final withdrawnText =
+        '${formatMoney(context, settings.totalProfitWithdrawn)} $currency';
+    final openingCashText =
+        '${formatMoney(context, settings.openingCashBalance)} $currency';
+
     final amountCtrl = TextEditingController();
     final reasonCtrl = TextEditingController();
     final notesCtrl = TextEditingController();
 
     final ok = await showDialog<bool>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text(l10n.withdrawFromProfit),
-        content: SizedBox(
-          width: 420,
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                _SummaryLine(
-                  label: l10n.withdrawableProfit,
-                  value: '${formatMoney(ctx, maxAmount)} ${settings.currency}',
-                  highlight: true,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (dialogContext, setDialogState) {
+            final raw = amountCtrl.text.trim().replaceAll(',', '');
+            final amount = double.tryParse(raw);
+            final canConfirm = amount != null && amount > 0 && amount <= maxAmount;
+
+            return AlertDialog(
+              title: Text(l10n.withdrawFromProfit),
+              content: SizedBox(
+                width: 420,
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        l10n.ownerCashOutDialogHint,
+                        style: Theme.of(dialogContext)
+                            .textTheme
+                            .bodySmall
+                            ?.copyWith(
+                              color: Theme.of(dialogContext)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                              height: 1.4,
+                            ),
+                      ),
+                      const SizedBox(height: 12),
+                      _SummaryLine(
+                        label: l10n.withdrawableProfit,
+                        value: withdrawableText,
+                        highlight: true,
+                      ),
+                      _SummaryLine(
+                        label: l10n.realizedProfit,
+                        value: realizedText,
+                      ),
+                      _SummaryLine(
+                        label: l10n.totalProfitWithdrawn,
+                        value: withdrawnText,
+                      ),
+                      _SummaryLine(
+                        label: l10n.openingCashBalance,
+                        value: openingCashText,
+                      ),
+                      const SizedBox(height: 16),
+                      ...spacedFormFields([
+                        TextField(
+                          controller: amountCtrl,
+                          decoration: InputDecoration(
+                            labelText: l10n.ownerCashOutAmount,
+                            suffixText: currency,
+                            helperText: l10n.ownerCashOutAmountInvalid(
+                              maxAmount.toStringAsFixed(2),
+                            ),
+                          ),
+                          keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true,
+                          ),
+                          onChanged: (_) => setDialogState(() {}),
+                        ),
+                        TextField(
+                          controller: reasonCtrl,
+                          decoration: InputDecoration(
+                            labelText: l10n.ownerCashOutReason,
+                          ),
+                        ),
+                        TextField(
+                          controller: notesCtrl,
+                          decoration:
+                              InputDecoration(labelText: l10n.notesOptional),
+                          maxLines: 2,
+                        ),
+                      ]),
+                    ],
+                  ),
                 ),
-                _SummaryLine(
-                  label: l10n.businessCapitalAmount,
-                  value:
-                      '${formatMoney(ctx, settings.capitalAmount)} ${settings.currency}',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext, false),
+                  child: Text(l10n.cancel),
                 ),
-                const SizedBox(height: 16),
-                ...spacedFormFields([
-                  TextField(
-                    controller: amountCtrl,
-                    decoration: InputDecoration(
-                      labelText: l10n.ownerCashOutAmount,
-                      suffixText: settings.currency,
-                    ),
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                  ),
-                  TextField(
-                    controller: reasonCtrl,
-                    decoration: InputDecoration(
-                      labelText: l10n.ownerCashOutReason,
-                    ),
-                  ),
-                  TextField(
-                    controller: notesCtrl,
-                    decoration: InputDecoration(labelText: l10n.notesOptional),
-                    maxLines: 2,
-                  ),
-                ]),
+                FilledButton(
+                  onPressed: canConfirm
+                      ? () => Navigator.pop(dialogContext, true)
+                      : null,
+                  child: Text(l10n.ownerCashOutConfirm),
+                ),
               ],
-            ),
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, false),
-            child: Text(l10n.cancel),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(ctx, true),
-            child: Text(l10n.ownerCashOutConfirm),
-          ),
-        ],
-      ),
+            );
+          },
+        );
+      },
     );
 
-    if (ok != true || !mounted) {
-      amountCtrl.dispose();
-      reasonCtrl.dispose();
-      notesCtrl.dispose();
-      return;
-    }
-
-    final amount = double.tryParse(amountCtrl.text.trim().replaceAll(',', ''));
+    final amount = double.tryParse(
+      amountCtrl.text.trim().replaceAll(',', ''),
+    );
     final reason = reasonCtrl.text.trim();
     final notes = notesCtrl.text.trim();
     amountCtrl.dispose();
     reasonCtrl.dispose();
     notesCtrl.dispose();
+
+    if (ok != true || !mounted) return;
 
     if (amount == null || amount <= 0 || amount > maxAmount) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -289,6 +337,7 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
     if (!_canCashOut) return const SizedBox.shrink();
 
     final l10n = context.l10n;
+    final settings = _settings;
     final canWithdraw = !_loading && _withdrawable > 0;
 
     return Card(
@@ -343,18 +392,23 @@ class _OwnerCashOutCardState extends State<OwnerCashOutCard> {
             ] else if (_error != null) ...[
               const SizedBox(height: 16),
               ErrorView(message: _error!, onRetry: _load),
-            ] else if (_settings != null) ...[
+            ] else if (settings != null) ...[
               const SizedBox(height: 16),
               _SummaryLine(
                 label: l10n.withdrawableProfit,
                 value:
-                    '${formatMoney(context, _withdrawable)} ${_settings!.currency}',
+                    '${formatMoney(context, _withdrawable)} ${settings.currency}',
                 highlight: true,
               ),
               _SummaryLine(
-                label: l10n.businessCapitalAmount,
+                label: l10n.realizedProfit,
                 value:
-                    '${formatMoney(context, _settings!.capitalAmount)} ${_settings!.currency}',
+                    '${formatMoney(context, settings.realizedProfit)} ${settings.currency}',
+              ),
+              _SummaryLine(
+                label: l10n.totalProfitWithdrawn,
+                value:
+                    '${formatMoney(context, settings.totalProfitWithdrawn)} ${settings.currency}',
               ),
               if (_withdrawable <= 0)
                 Padding(

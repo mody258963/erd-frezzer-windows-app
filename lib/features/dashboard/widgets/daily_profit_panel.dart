@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/dashboard/dashboard_period.dart';
 import '../../../core/l10n/api_labels.dart';
 import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_colors.dart';
 import '../daily_profit.dart';
+import '../dashboard_period_labels.dart';
 
 /// Hero block: profit summary with three equal metric tiles across the width.
 class DailyProfitPanel extends StatelessWidget {
@@ -57,9 +59,7 @@ class DailyProfitPanel extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Text(
-                        metrics.isWeekly
-                            ? l10n.weeklyProfit
-                            : l10n.todayProfit,
+                        dashboardProfitTitle(context, _dashboardPeriod(metrics)),
                         style: Theme.of(context)
                             .textTheme
                             .titleMedium
@@ -136,28 +136,38 @@ class DailyProfitPanel extends StatelessWidget {
   }
 
   List<Widget> _buildChips(BuildContext context, AppLocalizations l10n) {
-    if (metrics.isWeekly) {
-      final chips = <Widget>[
+    if (metrics.isPeriodScoped) {
+      return [
         _MetricChip(
-          label: l10n.weeklyCustomerRefunds,
-          value: formatMoney(context, metrics.customerRefunds),
-          icon: Icons.undo_outlined,
-          accent: metrics.customerRefunds > 0
-              ? AppColors.warning
-              : null,
+          label: l10n.periodNetSales,
+          value: formatMoney(context, metrics.sales),
+          icon: Icons.trending_up_outlined,
         ),
-        if (metrics.weeklyDiscount > 0)
+        if (metrics.periodGrossProfit > 0)
           _MetricChip(
-            label: l10n.weeklyDiscount,
-            value: formatMoney(context, metrics.weeklyDiscount),
+            label: l10n.periodGrossProfit,
+            value: formatMoney(context, metrics.periodGrossProfit),
+            icon: Icons.show_chart_outlined,
+          ),
+        if (metrics.costOfGoods > 0)
+          _MetricChip(
+            label: l10n.costOfGoods,
+            value: formatMoney(context, metrics.costOfGoods),
+            icon: Icons.shopping_bag_outlined,
+          ),
+        if (metrics.periodDiscount > 0)
+          _MetricChip(
+            label: l10n.periodDiscount,
+            value: formatMoney(context, metrics.periodDiscount),
             icon: Icons.discount_outlined,
             accent: AppColors.warning,
           ),
-        if (metrics.weeklyGrossProfit > 0)
+        if (metrics.customerRefunds > 0)
           _MetricChip(
-            label: l10n.weeklyGrossProfit,
-            value: formatMoney(context, metrics.weeklyGrossProfit),
-            icon: Icons.show_chart_outlined,
+            label: l10n.periodCustomerRefunds,
+            value: formatMoney(context, metrics.customerRefunds),
+            icon: Icons.undo_outlined,
+            accent: AppColors.warning,
           ),
         if (metrics.refundProfitImpact > 0)
           _MetricChip(
@@ -166,15 +176,7 @@ class DailyProfitPanel extends StatelessWidget {
             icon: Icons.trending_down_outlined,
             accent: AppColors.warning,
           ),
-        _MetricChip(
-          label: metrics.grossRevenue > 0 && metrics.grossRevenue != metrics.sales
-              ? l10n.weeklyNetSales
-              : l10n.weeklyRevenue,
-          value: formatMoney(context, metrics.sales),
-          icon: Icons.trending_up_outlined,
-        ),
       ];
-      return chips;
     }
 
     final chips = <Widget>[
@@ -184,8 +186,8 @@ class DailyProfitPanel extends StatelessWidget {
         icon: Icons.point_of_sale_outlined,
       ),
       _MetricChip(
-        label: l10n.todayCost,
-        value: formatMoney(context, metrics.cost),
+        label: l10n.costOfGoods,
+        value: formatMoney(context, metrics.costOfGoods),
         icon: Icons.shopping_bag_outlined,
       ),
     ];
@@ -199,6 +201,14 @@ class DailyProfitPanel extends StatelessWidget {
       );
     }
     return chips;
+  }
+
+  DashboardPeriod _dashboardPeriod(DailyProfitMetrics metrics) {
+    return switch (metrics.period) {
+      ProfitPeriod.daily => DashboardPeriod.day,
+      ProfitPeriod.weekly => DashboardPeriod.week,
+      ProfitPeriod.monthly => DashboardPeriod.month,
+    };
   }
 }
 

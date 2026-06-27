@@ -56,7 +56,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     await getIt<SettingsService>().setLocaleCode(code);
     setState(() => _localeCode = code);
     if (!mounted) return;
-    context.findAncestorStateOfType<FrostPartsAppState>()?.setLocale(Locale(code));
+    context.findAncestorStateOfType<FrostPartsAppState>()?.setLocale(
+      Locale(code),
+    );
   }
 
   @override
@@ -64,14 +66,22 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final l10n = context.l10n;
     final role =
         context.read<AuthCubit>().state.user?.role ?? UserRole.salesperson;
-    final canManageCategories =
-        RolePermissions.canPerform(AppAction.partCategoryManage, role);
-    final canManageUsers =
-        RolePermissions.canPerform(AppAction.userManage, role);
-    final canViewCapital =
-        RolePermissions.canPerform(AppAction.capitalView, role);
-    final canEditCapital =
-        RolePermissions.canPerform(AppAction.capitalEdit, role);
+    final canManageCategories = RolePermissions.canPerform(
+      AppAction.partCategoryManage,
+      role,
+    );
+    final canManageUsers = RolePermissions.canPerform(
+      AppAction.userManage,
+      role,
+    );
+    final canViewCapital = RolePermissions.canPerform(
+      AppAction.capitalView,
+      role,
+    );
+    final canEditCapital = RolePermissions.canPerform(
+      AppAction.capitalEdit,
+      role,
+    );
     return PageScaffold(
       title: l10n.settingsTitle,
       subtitle: l10n.settingsSubtitle,
@@ -92,14 +102,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(l10n.language, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    l10n.language,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
                     value: _localeCode,
                     decoration: InputDecoration(labelText: l10n.language),
                     items: [
-                      DropdownMenuItem(value: 'ar', child: Text(l10n.languageArabic)),
-                      DropdownMenuItem(value: 'en', child: Text(l10n.languageEnglish)),
+                      DropdownMenuItem(
+                        value: 'ar',
+                        child: Text(l10n.languageArabic),
+                      ),
+                      DropdownMenuItem(
+                        value: 'en',
+                        child: Text(l10n.languageEnglish),
+                      ),
                     ],
                     onChanged: (v) {
                       if (v != null) _applyLocale(v);
@@ -149,9 +168,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       backgroundColor: AppColors.primaryContainer,
                       child: Icon(
                         Icons.people_outline,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onPrimaryContainer,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                     ),
                     title: Text(l10n.usersTitle),
@@ -165,9 +182,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       backgroundColor: AppColors.primaryContainer,
                       child: Icon(
                         Icons.category_outlined,
-                        color: Theme.of(context)
-                            .colorScheme
-                            .onPrimaryContainer,
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                     ),
                     title: Text(l10n.partCategoriesTitle),
@@ -185,7 +200,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
               ],
             ),
           ),
-        
         ],
       ),
     );

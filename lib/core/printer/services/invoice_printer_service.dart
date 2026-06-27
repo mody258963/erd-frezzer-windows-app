@@ -2,6 +2,7 @@ import 'package:logging/logging.dart';
 
 import '../../../data/models/invoice_model.dart';
 import '../../../data/models/invoice_receipt_model.dart';
+import '../models/customer_week_statement.dart';
 import '../models/daily_sales_report.dart';
 import '../models/printer_settings.dart';
 import '../repository/printer_repository.dart';
@@ -169,7 +170,10 @@ class InvoicePrinterService {
     await _printerService.printRaw(bytes);
   }
 
-  Future<void> printDailySalesReport(DailySalesReport report) async {
+  Future<void> printDailySalesReport(
+    DailySalesReport report, {
+    bool compact = false,
+  }) async {
     _log.info(
       'Printing daily sales report ${report.date} '
       '(${report.invoiceCount} invoices)',
@@ -177,6 +181,27 @@ class InvoicePrinterService {
     final bytes = await _builder.buildDailySalesReport(
       settings: settings,
       report: report,
+      compact: compact,
+    );
+    await _printerService.printRaw(bytes);
+  }
+
+  Future<void> printDailyDrawerReport(DailySalesReport report) async {
+    _log.info('Printing daily drawer report ${report.date}');
+    final bytes = await _builder.buildDailyDrawerReport(
+      settings: settings,
+      report: report,
+    );
+    await _printerService.printRaw(bytes);
+  }
+
+  Future<void> printCustomerWeeklyStatement(
+    CustomerWeekStatement statement,
+  ) async {
+    _log.info('Printing weekly statement for ${statement.customerName}');
+    final bytes = await _builder.buildCustomerWeeklyStatement(
+      settings: settings,
+      statement: statement,
     );
     await _printerService.printRaw(bytes);
   }

@@ -320,6 +320,30 @@ abstract class AppLocalizations {
   /// **'Your business at a glance â€” sales, stock, and money'**
   String get dashboardSubtitle;
 
+  /// No description provided for @dashboardPeriodToday.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get dashboardPeriodToday;
+
+  /// No description provided for @dashboardPeriodWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get dashboardPeriodWeek;
+
+  /// No description provided for @dashboardPeriodMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'This month'**
+  String get dashboardPeriodMonth;
+
+  /// No description provided for @monthlyProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Monthly profit'**
+  String get monthlyProfit;
+
   /// No description provided for @dashboardNeedsAttention.
   ///
   /// In en, this message translates to:
@@ -836,6 +860,18 @@ abstract class AppLocalizations {
   /// **'API base URL'**
   String get apiBaseUrl;
 
+  /// No description provided for @apiBaseUrlHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Server host only — do not include /api/v1'**
+  String get apiBaseUrlHint;
+
+  /// No description provided for @apiBaseUrlSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'API URL saved — checking connection…'**
+  String get apiBaseUrlSaved;
+
   /// No description provided for @offlineCashOnly.
   ///
   /// In en, this message translates to:
@@ -1226,6 +1262,60 @@ abstract class AppLocalizations {
   /// **'Outstanding debt'**
   String get supplierDebt;
 
+  /// No description provided for @supplierUnpaidInstallments.
+  ///
+  /// In en, this message translates to:
+  /// **'Unpaid installments'**
+  String get supplierUnpaidInstallments;
+
+  /// No description provided for @viewAllInstallments.
+  ///
+  /// In en, this message translates to:
+  /// **'View all installments'**
+  String get viewAllInstallments;
+
+  /// No description provided for @supplierPayablesTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier payables'**
+  String get supplierPayablesTitle;
+
+  /// No description provided for @supplierPayablesSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'One section per supplier — pay against total debt'**
+  String get supplierPayablesSubtitle;
+
+  /// No description provided for @paySupplierTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay supplier'**
+  String get paySupplierTitle;
+
+  /// No description provided for @supplierPaidSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier payment recorded.'**
+  String get supplierPaidSuccess;
+
+  /// No description provided for @supplierNoDebt.
+  ///
+  /// In en, this message translates to:
+  /// **'No outstanding debt for this supplier.'**
+  String get supplierNoDebt;
+
+  /// No description provided for @supplierPayAmountInvalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Amount must be between 0.01 and {max}'**
+  String supplierPayAmountInvalid(Object max);
+
+  /// No description provided for @payInstallmentLegacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Pay installment'**
+  String get payInstallmentLegacy;
+
   /// No description provided for @save.
   ///
   /// In en, this message translates to:
@@ -1559,7 +1649,7 @@ abstract class AppLocalizations {
   /// No description provided for @customerViewThisWeek.
   ///
   /// In en, this message translates to:
-  /// **'This week'**
+  /// **'This week (Mon 9 AM – Sat)'**
   String get customerViewThisWeek;
 
   /// No description provided for @customerViewHistory.
@@ -1625,8 +1715,20 @@ abstract class AppLocalizations {
   /// No description provided for @printWeekInvoices.
   ///
   /// In en, this message translates to:
-  /// **'Print all (one job)'**
+  /// **'Print week statement'**
   String get printWeekInvoices;
+
+  /// No description provided for @printWeekInvoicesDetailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Print each invoice'**
+  String get printWeekInvoicesDetailed;
+
+  /// No description provided for @weekStatementPrinted.
+  ///
+  /// In en, this message translates to:
+  /// **'Week statement sent to printer'**
+  String get weekStatementPrinted;
 
   /// No description provided for @weekInvoicesPrinted.
   ///
@@ -3662,6 +3764,48 @@ abstract class AppLocalizations {
   /// **'Mark settled'**
   String get markSettled;
 
+  /// No description provided for @editBranchFinanceEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit entry'**
+  String get editBranchFinanceEntry;
+
+  /// No description provided for @voidBranchFinanceEntry.
+  ///
+  /// In en, this message translates to:
+  /// **'Void entry'**
+  String get voidBranchFinanceEntry;
+
+  /// No description provided for @voidBranchFinanceEntryTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Void this entry?'**
+  String get voidBranchFinanceEntryTitle;
+
+  /// No description provided for @voidBranchFinanceEntryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'The balance between branches will be updated. Transfer-linked charges must be reversed via the transfer screen.'**
+  String get voidBranchFinanceEntryHint;
+
+  /// No description provided for @branchFinanceEntryUpdated.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry updated'**
+  String get branchFinanceEntryUpdated;
+
+  /// No description provided for @branchFinanceEntryVoided.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry voided'**
+  String get branchFinanceEntryVoided;
+
+  /// No description provided for @entryVoided.
+  ///
+  /// In en, this message translates to:
+  /// **'Voided'**
+  String get entryVoided;
+
   /// No description provided for @needTwoBranches.
   ///
   /// In en, this message translates to:
@@ -3739,6 +3883,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Transfer updated'**
   String get transferUpdated;
+
+  /// No description provided for @reverseTransfer.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse transfer'**
+  String get reverseTransfer;
+
+  /// No description provided for @reverseTransferTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reverse completed transfer?'**
+  String get reverseTransferTitle;
+
+  /// No description provided for @reverseTransferHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Stock returns to the source branch and the inter-branch charge is voided. Dashboard realized cash is not affected.'**
+  String get reverseTransferHint;
+
+  /// No description provided for @transferReversed.
+  ///
+  /// In en, this message translates to:
+  /// **'Transfer reversed'**
+  String get transferReversed;
 
   /// No description provided for @editPayment.
   ///
@@ -3953,20 +4121,62 @@ abstract class AppLocalizations {
   /// No description provided for @businessCapitalSubtitleAdmin.
   ///
   /// In en, this message translates to:
-  /// **'Set owner funding used to compare stock and receivables against available cash.'**
+  /// **'Adjust opening cash when the drawer count differs from the system. Total capital = inventory + realized cash.'**
   String get businessCapitalSubtitleAdmin;
 
   /// No description provided for @businessCapitalSubtitleView.
   ///
   /// In en, this message translates to:
-  /// **'Financing overview (read-only). Contact an admin to change capital.'**
+  /// **'Computed from inventory at cost plus cash on hand (read-only).'**
   String get businessCapitalSubtitleView;
 
   /// No description provided for @businessCapitalAmount.
   ///
   /// In en, this message translates to:
-  /// **'Owner capital'**
+  /// **'Business capital'**
   String get businessCapitalAmount;
+
+  /// No description provided for @businessCapitalFormulaHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Inventory at cost + cash on hand'**
+  String get businessCapitalFormulaHint;
+
+  /// No description provided for @openingCashBalance.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening cash balance'**
+  String get openingCashBalance;
+
+  /// No description provided for @openingCashSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set opening cash'**
+  String get openingCashSet;
+
+  /// No description provided for @openingCashUpdateTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update opening cash balance'**
+  String get openingCashUpdateTitle;
+
+  /// No description provided for @openingCashUpdateHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Sets the opening cash in the drawer, not total business capital. Inventory is added automatically.'**
+  String get openingCashUpdateHint;
+
+  /// No description provided for @openingCashSaved.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening cash balance saved'**
+  String get openingCashSaved;
+
+  /// No description provided for @openingCashDefaultReason.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening drawer count'**
+  String get openingCashDefaultReason;
 
   /// No description provided for @businessCapitalSet.
   ///
@@ -4034,6 +4244,18 @@ abstract class AppLocalizations {
   /// **'Withdrawable profit'**
   String get withdrawableProfit;
 
+  /// No description provided for @realizedProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Realized profit'**
+  String get realizedProfit;
+
+  /// No description provided for @totalProfitWithdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'Total withdrawn'**
+  String get totalProfitWithdrawn;
+
   /// No description provided for @profitWithdrawnSuccess.
   ///
   /// In en, this message translates to:
@@ -4055,8 +4277,14 @@ abstract class AppLocalizations {
   /// No description provided for @ownerCashOutSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Withdraw realized profit. Business capital is not reduced.'**
+  /// **'Deducted from profit margin, not opening cash. Cash on hand and business capital decrease when money leaves the drawer.'**
   String get ownerCashOutSubtitle;
+
+  /// No description provided for @ownerCashOutDialogHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening cash balance is not changed. Only realized profit limits this withdrawal.'**
+  String get ownerCashOutDialogHint;
 
   /// No description provided for @ownerCashOutRecord.
   ///
@@ -4166,6 +4394,102 @@ abstract class AppLocalizations {
   /// **'POs, installments, and payments this week'**
   String get dashboardPurchasesSubtitle;
 
+  /// No description provided for @costOfGoods.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost of goods'**
+  String get costOfGoods;
+
+  /// No description provided for @dashboardSnapshotTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Current position'**
+  String get dashboardSnapshotTitle;
+
+  /// No description provided for @dashboardSnapshotSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Snapshot — does not change with the period tab'**
+  String get dashboardSnapshotSubtitle;
+
+  /// No description provided for @periodNetCashFlowDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Net cash flow — today'**
+  String get periodNetCashFlowDay;
+
+  /// No description provided for @periodNetCashFlowWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Net cash flow — this week'**
+  String get periodNetCashFlowWeek;
+
+  /// No description provided for @periodNetCashFlowMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Net cash flow — this month'**
+  String get periodNetCashFlowMonth;
+
+  /// No description provided for @dashboardFinanceOverview.
+  ///
+  /// In en, this message translates to:
+  /// **'Financial overview'**
+  String get dashboardFinanceOverview;
+
+  /// No description provided for @dashboardFinanceOverviewSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Capital, cash, and obligations in one place'**
+  String get dashboardFinanceOverviewSubtitle;
+
+  /// No description provided for @dashboardPeriodActivity.
+  ///
+  /// In en, this message translates to:
+  /// **'Period activity'**
+  String get dashboardPeriodActivity;
+
+  /// No description provided for @cashOnHandRealized.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash on hand'**
+  String get cashOnHandRealized;
+
+  /// No description provided for @mustCollectCustomers.
+  ///
+  /// In en, this message translates to:
+  /// **'Must collect from customers'**
+  String get mustCollectCustomers;
+
+  /// No description provided for @mustPaySuppliers.
+  ///
+  /// In en, this message translates to:
+  /// **'Must pay suppliers'**
+  String get mustPaySuppliers;
+
+  /// No description provided for @weeklyNetCashFlowRealized.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly net cash flow'**
+  String get weeklyNetCashFlowRealized;
+
+  /// No description provided for @weeklyCashInRealized.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly cash in'**
+  String get weeklyCashInRealized;
+
+  /// No description provided for @weeklyCashOutRealized.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly cash out'**
+  String get weeklyCashOutRealized;
+
+  /// No description provided for @legacyEstimatedAvailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Legacy estimate'**
+  String get legacyEstimatedAvailable;
+
   /// No description provided for @totalSupplierDebt.
   ///
   /// In en, this message translates to:
@@ -4207,6 +4531,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Purchases received (week)'**
   String get weeklyPurchasesReceived;
+
+  /// No description provided for @periodRevenue.
+  ///
+  /// In en, this message translates to:
+  /// **'Revenue'**
+  String get periodRevenue;
+
+  /// No description provided for @periodNetSales.
+  ///
+  /// In en, this message translates to:
+  /// **'Net sales'**
+  String get periodNetSales;
+
+  /// No description provided for @periodDiscount.
+  ///
+  /// In en, this message translates to:
+  /// **'Discounts'**
+  String get periodDiscount;
+
+  /// No description provided for @periodGrossProfit.
+  ///
+  /// In en, this message translates to:
+  /// **'Gross profit'**
+  String get periodGrossProfit;
+
+  /// No description provided for @periodCustomerRefunds.
+  ///
+  /// In en, this message translates to:
+  /// **'Customer refunds'**
+  String get periodCustomerRefunds;
+
+  /// No description provided for @periodNetCashFlowRealized.
+  ///
+  /// In en, this message translates to:
+  /// **'Net cash flow'**
+  String get periodNetCashFlowRealized;
+
+  /// No description provided for @periodCashInRealized.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash in'**
+  String get periodCashInRealized;
+
+  /// No description provided for @periodCashOutRealized.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash out'**
+  String get periodCashOutRealized;
+
+  /// No description provided for @periodCashInDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash in — today'**
+  String get periodCashInDay;
+
+  /// No description provided for @periodCashInWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash in — this week'**
+  String get periodCashInWeek;
+
+  /// No description provided for @periodCashInMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash in — this month'**
+  String get periodCashInMonth;
+
+  /// No description provided for @periodCashOutDay.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash out — today'**
+  String get periodCashOutDay;
+
+  /// No description provided for @periodCashOutWeek.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash out — this week'**
+  String get periodCashOutWeek;
+
+  /// No description provided for @periodCashOutMonth.
+  ///
+  /// In en, this message translates to:
+  /// **'Cash out — this month'**
+  String get periodCashOutMonth;
+
+  /// No description provided for @periodSupplierPayments.
+  ///
+  /// In en, this message translates to:
+  /// **'Supplier payments'**
+  String get periodSupplierPayments;
+
+  /// No description provided for @periodPurchasesOrdered.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases ordered'**
+  String get periodPurchasesOrdered;
+
+  /// No description provided for @periodPurchasesReceived.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases received'**
+  String get periodPurchasesReceived;
 
   /// No description provided for @payablesOverdueInstallments.
   ///

@@ -2,6 +2,7 @@ import 'package:esc_pos_utils_plus/esc_pos_utils_plus.dart';
 
 import '../../../data/models/invoice_model.dart';
 import '../../../data/models/invoice_receipt_model.dart';
+import '../models/customer_week_statement.dart';
 import '../models/daily_sales_report.dart';
 import '../models/printer_settings.dart';
 import 'esc_pos_text_helper.dart';
@@ -31,14 +32,23 @@ class EscPosReceiptBuilder {
         .replaceAll(RegExp(r'\.$'), '');
   }
 
-  String _paymentLabel(String? paymentMethod) {
+  String _paymentLabelAr(String? paymentMethod) {
     final p = (paymentMethod ?? '').toLowerCase();
     if (p == 'cash') return 'نقدي';
     if (p == 'credit') return 'آجل';
-    return paymentMethod ?? '';
+    return EscPosTextHelper.sanitizeForEscPos(paymentMethod ?? '');
   }
 
   String _formatMoney(double value) => value.toStringAsFixed(2);
+
+  String _formatMoneyAr(double value) => '${_formatMoney(value)} جنيه';
+
+  String _formatInvoiceDate(String invoiceDate) {
+    if (invoiceDate.length >= 10) {
+      return invoiceDate.substring(0, 10);
+    }
+    return invoiceDate;
+  }
 
   /// Four-column table header (الصنف | العدد | السعر | الإجمالي).
   Future<void> _printItemsTableHeader(
@@ -160,21 +170,14 @@ class EscPosReceiptBuilder {
     await EscPosTextHelper.printLine(
       generator,
       bytes,
-      'فاتورة',
+      'فاتورة رقم $invoiceNumber',
       styles: const PosStyles(align: PosAlign.center, bold: true),
       paperWidthPx: widthPx,
     );
     await EscPosTextHelper.printLine(
       generator,
       bytes,
-      'Invoice #$invoiceNumber',
-      styles: const PosStyles(align: PosAlign.center, bold: true),
-      paperWidthPx: widthPx,
-    );
-    await EscPosTextHelper.printLine(
-      generator,
-      bytes,
-      'التاريخ: ${EscPosTextHelper.sanitizeForEscPos(invoiceDate)}',
+      'التاريخ: ${_formatInvoiceDate(invoiceDate)}',
       paperWidthPx: widthPx,
     );
     if (branchName != null && branchName.trim().isNotEmpty) {
@@ -217,67 +220,58 @@ class EscPosReceiptBuilder {
     }
 
     bytes.addAll(generator.hr());
-    await EscPosTextHelper.printColumns(
+    await EscPosTextHelper.printLabelValueRow(
       generator,
       bytes,
-      left: 'عدد الأصناف',
-      right: '${items.length}',
-      paperWidthPx: widthPx,
-    );
-    await EscPosTextHelper.printColumns(
-      generator,
-      bytes,
-      left: 'الإجمالي الفرعي',
-      right: subtotal.toStringAsFixed(2),
+      label: 'الإجمالي:',
+      value: _formatMoneyAr(subtotal),
       paperWidthPx: widthPx,
     );
     if (discount > 0) {
-      await EscPosTextHelper.printColumns(
+      await EscPosTextHelper.printLabelValueRow(
         generator,
         bytes,
-        left: 'الخصم',
-        right: '-${discount.toStringAsFixed(2)}',
+        label: 'الخصم:',
+        value: '-${_formatMoney(discount)} جنيه',
         paperWidthPx: widthPx,
       );
     }
-    await EscPosTextHelper.printColumns(
+    await EscPosTextHelper.printLabelValueRow(
       generator,
       bytes,
-      left: 'الصافي',
-      right: '${total.toStringAsFixed(2)} EGP',
+      label: 'الصافي:',
+      value: _formatMoneyAr(total),
       paperWidthPx: widthPx,
-      leftStyles: const PosStyles(bold: true),
-      rightStyles: const PosStyles(align: PosAlign.right, bold: true),
+      bold: true,
     );
     if (paymentMethod != null && paymentMethod.isNotEmpty) {
-      await EscPosTextHelper.printColumns(
+      await EscPosTextHelper.printLabelValueRow(
         generator,
         bytes,
-        left: 'طريقة الدفع',
-        right: _paymentLabel(paymentMethod),
+        label: 'طريقة الدفع:',
+        value: _paymentLabelAr(paymentMethod),
         paperWidthPx: widthPx,
       );
     }
     final isCash = (paymentMethod ?? '').toLowerCase() == 'cash';
     if (isCash && amountPaid != null && amountPaid > 0) {
-      await EscPosTextHelper.printColumns(
+      await EscPosTextHelper.printLabelValueRow(
         generator,
         bytes,
-        left: 'المبلغ المستلم',
-        right: '${_formatMoney(amountPaid)} EGP',
+        label: 'المدفوع:',
+        value: _formatMoneyAr(amountPaid),
         paperWidthPx: widthPx,
       );
-      final change = changeDue ??
-          (amountPaid > total ? amountPaid - total : 0);
+      final change =
+          changeDue ?? (amountPaid > total ? amountPaid - total : 0);
       if (change > 0) {
-        await EscPosTextHelper.printColumns(
+        await EscPosTextHelper.printLabelValueRow(
           generator,
           bytes,
-          left: 'الباقي للعميل',
-          right: '${_formatMoney(change)} EGP',
+          label: 'الباقي:',
+          value: _formatMoneyAr(change),
           paperWidthPx: widthPx,
-          leftStyles: const PosStyles(bold: true),
-          rightStyles: const PosStyles(align: PosAlign.right, bold: true),
+          bold: true,
         );
       }
     }
@@ -479,6 +473,7 @@ class EscPosReceiptBuilder {
   Future<List<int>> buildDailySalesReport({
     required PrinterSettings settings,
     required DailySalesReport report,
+    bool compact = false,
   }) async {
     final profile = await CapabilityProfile.load();
     final paper = settings.paperWidthMm == 80 ? PaperSize.mm80 : PaperSize.mm58;
@@ -518,7 +513,7 @@ class EscPosReceiptBuilder {
     }
     bytes.addAll(generator.hr(ch: '-'));
 
-    if (report.lines.isEmpty) {
+    if (report.lines.isEmpty && report.cashTotal <= 0) {
       await EscPosTextHelper.printLine(
         generator,
         bytes,
@@ -526,6 +521,33 @@ class EscPosReceiptBuilder {
         styles: const PosStyles(align: PosAlign.center),
         paperWidthPx: widthPx,
       );
+    } else if (compact) {
+      EscPosTextHelper.printRow(generator, bytes, [
+        PosColumn(text: 'Invoices:', width: 6),
+        PosColumn(
+          text: '${report.invoiceCount}',
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right),
+        ),
+      ]);
+      EscPosTextHelper.printRow(generator, bytes, [
+        PosColumn(text: 'Cash total:', width: 6, styles: const PosStyles(bold: true)),
+        PosColumn(
+          text: '${_formatMoney(report.cashTotal)} EGP',
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right, bold: true),
+        ),
+      ]);
+      if (report.discountTotal > 0) {
+        EscPosTextHelper.printRow(generator, bytes, [
+          PosColumn(text: 'Discount:', width: 6),
+          PosColumn(
+            text: '-${_formatMoney(report.discountTotal)}',
+            width: 6,
+            styles: const PosStyles(align: PosAlign.right),
+          ),
+        ]);
+      }
     } else {
       await EscPosTextHelper.printTableRow(
         generator,
@@ -563,46 +585,314 @@ class EscPosReceiptBuilder {
       }
     }
 
+    if (!compact) {
+      bytes.addAll(generator.hr());
+      EscPosTextHelper.printRow(generator, bytes, [
+        PosColumn(text: 'Invoices:', width: 6),
+        PosColumn(
+          text: '${report.invoiceCount}',
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right),
+        ),
+      ]);
+      EscPosTextHelper.printRow(generator, bytes, [
+        PosColumn(text: 'Cash:', width: 6),
+        PosColumn(
+          text: _formatMoney(report.cashTotal),
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right),
+        ),
+      ]);
+      EscPosTextHelper.printRow(generator, bytes, [
+        PosColumn(text: 'Credit:', width: 6),
+        PosColumn(
+          text: _formatMoney(report.creditTotal),
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right),
+        ),
+      ]);
+      if (report.discountTotal > 0) {
+        EscPosTextHelper.printRow(generator, bytes, [
+          PosColumn(text: 'Discount:', width: 6),
+          PosColumn(
+            text: '-${_formatMoney(report.discountTotal)}',
+            width: 6,
+            styles: const PosStyles(align: PosAlign.right),
+          ),
+        ]);
+      }
+      EscPosTextHelper.printRow(generator, bytes, [
+        PosColumn(text: 'TOTAL:', width: 6, styles: const PosStyles(bold: true)),
+        PosColumn(
+          text: '${_formatMoney(report.grandTotal)} EGP',
+          width: 6,
+          styles: const PosStyles(align: PosAlign.right, bold: true),
+        ),
+      ]);
+    }
     bytes.addAll(generator.hr());
-    await EscPosTextHelper.printColumns(
+    await EscPosTextHelper.printLine(
       generator,
       bytes,
-      left: 'عدد الفواتير',
-      right: '${report.invoiceCount}',
+      settings.receiptPhone,
+      styles: const PosStyles(align: PosAlign.center),
       paperWidthPx: widthPx,
     );
-    await EscPosTextHelper.printColumns(
+    await EscPosTextHelper.printLine(
       generator,
       bytes,
-      left: 'نقدي',
-      right: _formatMoney(report.cashTotal),
+      settings.receiptFooter,
+      styles: const PosStyles(align: PosAlign.center),
       paperWidthPx: widthPx,
     );
-    await EscPosTextHelper.printColumns(
+    bytes.addAll(generator.feed(2));
+    bytes.addAll(generator.cut());
+    return bytes;
+  }
+
+  /// Daily drawer: cash sales + collections − outflows = drawer total.
+  Future<List<int>> buildDailyDrawerReport({
+    required PrinterSettings settings,
+    required DailySalesReport report,
+  }) async {
+    final profile = await CapabilityProfile.load();
+    final paper = settings.paperWidthMm == 80 ? PaperSize.mm80 : PaperSize.mm58;
+    final generator = Generator(paper, profile);
+    final bytes = <int>[];
+    final widthPx = _paperWidthPx(settings.paperWidthMm);
+
+    bytes.addAll(generator.reset());
+    await EscPosTextHelper.printLine(
       generator,
       bytes,
-      left: 'آجل',
-      right: _formatMoney(report.creditTotal),
+      settings.companyName,
+      styles: const PosStyles(align: PosAlign.center, bold: true),
       paperWidthPx: widthPx,
     );
-    if (report.discountTotal > 0) {
-      await EscPosTextHelper.printColumns(
+    bytes.addAll(generator.hr());
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      'تقرير الدرج اليومي',
+      styles: const PosStyles(align: PosAlign.center, bold: true),
+      paperWidthPx: widthPx,
+    );
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      'التاريخ: ${report.date}',
+      paperWidthPx: widthPx,
+    );
+    if (report.branchName != null && report.branchName!.trim().isNotEmpty) {
+      await EscPosTextHelper.printLine(
         generator,
         bytes,
-        left: 'الخصم',
-        right: '-${_formatMoney(report.discountTotal)}',
+        'الفرع: ${report.branchName!.trim()}',
         paperWidthPx: widthPx,
       );
     }
-    await EscPosTextHelper.printColumns(
+    bytes.addAll(generator.hr(ch: '-'));
+
+    await EscPosTextHelper.printLine(
       generator,
       bytes,
-      left: 'الإجمالي',
-      right: '${_formatMoney(report.grandTotal)} EGP',
+      'المبيعات النقدية',
+      styles: const PosStyles(bold: true),
       paperWidthPx: widthPx,
-      leftStyles: const PosStyles(bold: true),
-      rightStyles: const PosStyles(align: PosAlign.right, bold: true),
     );
+    await EscPosTextHelper.printLabelValueRow(
+      generator,
+      bytes,
+      label: 'الإجمالي:',
+      value: _formatMoneyAr(report.cashSalesTotal),
+      paperWidthPx: widthPx,
+    );
+
+    bytes.addAll(generator.hr(ch: '-'));
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      'تحصيلات العملاء',
+      styles: const PosStyles(bold: true),
+      paperWidthPx: widthPx,
+    );
+    if (report.collections.isEmpty) {
+      await EscPosTextHelper.printLine(
+        generator,
+        bytes,
+        report.collectionsDetailUnavailable
+            ? 'تفاصيل التحصيلات متاحة عند توفر API'
+            : '—',
+        paperWidthPx: widthPx,
+      );
+    } else {
+      for (final line in report.collections) {
+        await EscPosTextHelper.printColumns(
+          generator,
+          bytes,
+          left: line.label,
+          right: _formatMoneyAr(line.amount),
+          paperWidthPx: widthPx,
+        );
+      }
+    }
+
+    final cashInSubtotal = report.cashInTotal > 0
+        ? report.cashInTotal
+        : report.cashSalesTotal + report.collectionsTotal;
+    bytes.addAll(generator.hr());
+    await EscPosTextHelper.printLabelValueRow(
+      generator,
+      bytes,
+      label: 'الإجمالي:',
+      value: _formatMoneyAr(cashInSubtotal),
+      paperWidthPx: widthPx,
+      bold: true,
+    );
+
+    bytes.addAll(generator.hr(ch: '-'));
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      '(−) مدفوعات الموردين والمصاريف النقدية',
+      styles: const PosStyles(bold: true),
+      paperWidthPx: widthPx,
+    );
+    if (report.outflows.isEmpty) {
+      await EscPosTextHelper.printLabelValueRow(
+        generator,
+        bytes,
+        label: 'الإجمالي:',
+        value: _formatMoneyAr(report.cashOutTotal),
+        paperWidthPx: widthPx,
+      );
+    } else {
+      for (final line in report.outflows) {
+        await EscPosTextHelper.printColumns(
+          generator,
+          bytes,
+          left: line.label,
+          right: _formatMoneyAr(line.amount),
+          paperWidthPx: widthPx,
+        );
+      }
+    }
+
+    final drawer = report.drawerTotal != 0
+        ? report.drawerTotal
+        : report.computedDrawerTotal;
+    bytes.addAll(generator.hr());
+    await EscPosTextHelper.printLabelValueRow(
+      generator,
+      bytes,
+      label: 'الإجمالي في الدرج:',
+      value: _formatMoneyAr(drawer),
+      paperWidthPx: widthPx,
+      bold: true,
+    );
+
+    bytes.addAll(generator.hr());
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      settings.receiptPhone,
+      styles: const PosStyles(align: PosAlign.center),
+      paperWidthPx: widthPx,
+    );
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      settings.receiptFooter,
+      styles: const PosStyles(align: PosAlign.center),
+      paperWidthPx: widthPx,
+    );
+    bytes.addAll(generator.feed(2));
+    bytes.addAll(generator.cut());
+    return bytes;
+  }
+
+  Future<List<int>> buildCustomerWeeklyStatement({
+    required PrinterSettings settings,
+    required CustomerWeekStatement statement,
+  }) async {
+    final profile = await CapabilityProfile.load();
+    final paper = settings.paperWidthMm == 80 ? PaperSize.mm80 : PaperSize.mm58;
+    final generator = Generator(paper, profile);
+    final bytes = <int>[];
+    final widthPx = _paperWidthPx(settings.paperWidthMm);
+
+    bytes.addAll(generator.reset());
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      settings.companyName,
+      styles: const PosStyles(align: PosAlign.center, bold: true),
+      paperWidthPx: widthPx,
+    );
+    bytes.addAll(generator.hr());
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      'كشف حساب أسبوعي',
+      styles: const PosStyles(align: PosAlign.center, bold: true),
+      paperWidthPx: widthPx,
+    );
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      'العميل: ${statement.customerName}',
+      styles: const PosStyles(align: PosAlign.center, bold: true),
+      paperWidthPx: widthPx,
+    );
+    if (statement.customerPhone != null &&
+        statement.customerPhone!.trim().isNotEmpty) {
+      await EscPosTextHelper.printLine(
+        generator,
+        bytes,
+        'الهاتف: ${statement.customerPhone!.trim()}',
+        paperWidthPx: widthPx,
+      );
+    }
+    await EscPosTextHelper.printLine(
+      generator,
+      bytes,
+      'من ${statement.weekStart} إلى ${statement.weekEnd}',
+      paperWidthPx: widthPx,
+    );
+    bytes.addAll(generator.hr(ch: '-'));
+    await _printItemsTableHeader(generator, bytes, widthPx);
+
+    for (final line in statement.lines) {
+      await _printLineItem(
+        generator,
+        bytes,
+        widthPx,
+        name: line.partName,
+        quantity: line.quantity,
+        unitPrice: line.unitPrice,
+        lineTotal: line.lineTotal,
+      );
+    }
+
+    bytes.addAll(generator.hr());
+    await EscPosTextHelper.printLabelValueRow(
+      generator,
+      bytes,
+      label: 'إجمالي الأسبوع:',
+      value: _formatMoneyAr(statement.weekTotal),
+      paperWidthPx: widthPx,
+      bold: true,
+    );
+    final payments = statement.paymentsCollected;
+    if (payments != null && payments > 0) {
+      await EscPosTextHelper.printLabelValueRow(
+        generator,
+        bytes,
+        label: 'المدفوع هذا الأسبوع:',
+        value: _formatMoneyAr(payments),
+        paperWidthPx: widthPx,
+      );
+    }
     bytes.addAll(generator.hr());
     await EscPosTextHelper.printLine(
       generator,

@@ -1,11 +1,13 @@
+import '../../core/dashboard/dashboard_period.dart';
 import '../../data/models/invoice_model.dart';
 import '../../data/repositories/invoice_repository.dart';
 import '../../data/repositories/part_repository.dart';
+import 'dashboard_summary_utils.dart';
 
 /// Period for profit figures shown on the dashboard.
-enum ProfitPeriod { daily, weekly }
+enum ProfitPeriod { daily, weekly, monthly }
 
-/// Sales, cost, and profit for a dashboard period (day or week).
+/// Sales, cost, and profit for a dashboard period (day, week, or month).
 class DailyProfitMetrics {
   const DailyProfitMetrics({
     required this.sales,
@@ -15,8 +17,8 @@ class DailyProfitMetrics {
     this.period = ProfitPeriod.daily,
     this.customerRefunds = 0,
     this.grossRevenue = 0,
-    this.weeklyDiscount = 0,
-    this.weeklyGrossProfit = 0,
+    this.periodDiscount = 0,
+    this.periodGrossProfit = 0,
     this.refundProfitImpact = 0,
     this.reportedProfit,
   });
@@ -28,49 +30,77 @@ class DailyProfitMetrics {
   final ProfitPeriod period;
   final double customerRefunds;
   final double grossRevenue;
-  final double weeklyDiscount;
-  final double weeklyGrossProfit;
+  final double periodDiscount;
+  final double periodGrossProfit;
   final double refundProfitImpact;
-  /// `weekly_profit` from API when present.
+  /// `period_profit` from API when present.
   final double? reportedProfit;
 
-  /// Net profit after returns — always from API when weekly summary exists.
+  /// Net profit after returns — from API `period_profit` when available.
   double get profit =>
       reportedProfit ??
-      (isWeekly ? weeklyGrossProfit - weeklyDiscount : sales - cost);
+      (isPeriodScoped
+          ? (periodGrossProfit - periodDiscount - refundProfitImpact)
+              .clamp(0, double.infinity)
+          : sales - cost);
+
+  /// COGS = `period_revenue − period_gross_profit` (not revenue − profit).
+  double get costOfGoods => isPeriodScoped && (grossRevenue > 0 || periodGrossProfit > 0)
+      ? (grossRevenue - periodGrossProfit).clamp(0, double.infinity)
+      : cost;
 
   double get marginPercent => sales > 0 ? (profit / sales) * 100 : 0;
 
   bool get isWeekly => period == ProfitPeriod.weekly;
+  bool get isMonthly => period == ProfitPeriod.monthly;
+  bool get isPeriodScoped => period != ProfitPeriod.daily || reportedProfit != null;
 }
 
-/// Reads profit fields returned by `/dashboard/summary` when present.
-DailyProfitMetrics? profitFromSummary(Map<String, dynamic> summary) {
-  if (summary.containsKey('weekly_profit')) {
-    final profit = _num(summary['weekly_profit']);
-    final revenue = _num(summary['weekly_revenue']);
-    final refunds = _num(summary['weekly_customer_refunds']);
-    final netSales = _num(summary['weekly_net_sales']);
-    final discount = _num(summary['weekly_discount']);
-    final grossProfit = _num(summary['weekly_gross_profit']);
-    final refundImpact = _num(summary['weekly_customer_refund_profit_impact']);
+/// Reads period profit fields from a single `/dashboard/summary` response.
+DailyProfitMetrics? profitFromSummary(
+  Map<String, dynamic> summary, {
+  DashboardPeriod period = DashboardPeriod.week,
+}) {
+  final profitPeriod = switch (period) {
+    DashboardPeriod.day => ProfitPeriod.daily,
+    DashboardPeriod.week => ProfitPeriod.weekly,
+    DashboardPeriod.month => ProfitPeriod.monthly,
+  };
+
+  final hasPeriodProfit = summary.containsKey('period_profit') ||
+      summary.containsKey('weekly_profit');
+
+  if (hasPeriodProfit) {
+    final profit = summaryPeriodNum(summary, 'profit');
+    final revenue = summaryPeriodNum(summary, 'revenue');
+    final refunds = summaryPeriodNum(summary, 'customer_refunds');
+    final netSales = summaryPeriodNum(summary, 'net_sales');
+    final discount = summaryPeriodNum(summary, 'discount');
+    final grossProfit = summaryPeriodNum(summary, 'gross_profit');
+    final refundImpact =
+        summaryPeriodNum(summary, 'customer_refund_profit_impact');
     final salesDisplay = netSales > 0
         ? netSales
         : (revenue - refunds).clamp(0.0, double.infinity);
+    final cogs = (revenue > 0 || grossProfit > 0
+            ? (revenue - grossProfit).clamp(0, double.infinity)
+            : 0.0)
+        .toDouble();
+
     return DailyProfitMetrics(
       sales: salesDisplay > 0 ? salesDisplay : revenue,
-      cost: salesDisplay > 0
-          ? (salesDisplay - profit).clamp(0, double.infinity)
-          : 0,
-      period: ProfitPeriod.weekly,
+      cost: cogs,
+      period: profitPeriod,
       customerRefunds: refunds,
       grossRevenue: revenue,
-      weeklyDiscount: discount,
-      weeklyGrossProfit: grossProfit,
+      periodDiscount: discount,
+      periodGrossProfit: grossProfit,
       refundProfitImpact: refundImpact,
       reportedProfit: profit,
     );
   }
+
+  if (period != DashboardPeriod.day) return null;
 
   final sales = _num(
     summary['today_sales'] ?? summary['sales_today'] ?? summary['total_sales_today'],
@@ -84,16 +114,16 @@ DailyProfitMetrics? profitFromSummary(Map<String, dynamic> summary) {
     'net_profit_today',
   ]) {
     if (summary.containsKey(key)) {
-      final profit = _num(summary[key]);
+      final dayProfit = _num(summary[key]);
       return DailyProfitMetrics(
         sales: sales,
-        cost: (sales - profit).clamp(0, double.infinity),
+        cost: (sales - dayProfit).clamp(0, double.infinity),
         invoiceCount: _int(summary['today_invoices_count']),
       );
     }
   }
 
-  final cost = _num(
+  final dayCost = _num(
     summary['today_cost'] ??
         summary['today_cogs'] ??
         summary['cost_of_goods_today'] ??
@@ -104,27 +134,28 @@ DailyProfitMetrics? profitFromSummary(Map<String, dynamic> summary) {
       summary.containsKey('cost_of_goods_today')) {
     return DailyProfitMetrics(
       sales: sales,
-      cost: cost,
+      cost: dayCost,
       invoiceCount: _int(summary['today_invoices_count']),
     );
   }
 
   if (sales > 0 && summary.containsKey('today_margin')) {
     final margin = _num(summary['today_margin']);
-    final profit = sales * (margin / 100);
-    return DailyProfitMetrics(sales: sales, cost: sales - profit);
+    final dayProfit = sales * (margin / 100);
+    return DailyProfitMetrics(sales: sales, cost: sales - dayProfit);
   }
 
   return null;
 }
 
-/// Computes profit from today's invoices and catalog cost prices.
+/// Computes profit from today's invoices and catalog cost prices (fallback).
 Future<DailyProfitMetrics> computeTodayProfit({
   required InvoiceRepository invoiceRepository,
   required PartRepository partRepository,
 }) async {
   final today = _todayIsoDate();
-  final invoices = await invoiceRepository.list(from: today, to: today, perPage: 200);
+  final invoices =
+      await invoiceRepository.list(from: today, to: today, perPage: 100);
   final parts = await partRepository.list(perPage: 500);
   final costByPartId = {for (final p in parts) p.id: p.costPrice};
 
@@ -142,8 +173,7 @@ Future<DailyProfitMetrics> computeTodayProfit({
     }
     for (final line in lines) {
       final qty = line.quantity;
-      final lineSales =
-          line.lineTotal ?? (line.unitPrice ?? 0) * qty;
+      final lineSales = line.lineTotal ?? (line.unitPrice ?? 0) * qty;
       final unitCost = costByPartId[line.partId] ?? 0;
       sales += lineSales;
       cost += unitCost * qty;

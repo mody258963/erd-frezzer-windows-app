@@ -122,6 +122,18 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your business at a glance â€” sales, stock, and money';
 
   @override
+  String get dashboardPeriodToday => 'Today';
+
+  @override
+  String get dashboardPeriodWeek => 'This week';
+
+  @override
+  String get dashboardPeriodMonth => 'This month';
+
+  @override
+  String get monthlyProfit => 'Monthly profit';
+
+  @override
   String get dashboardNeedsAttention => 'Needs attention';
 
   @override
@@ -387,6 +399,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get apiBaseUrl => 'API base URL';
 
   @override
+  String get apiBaseUrlHint => 'Server host only — do not include /api/v1';
+
+  @override
+  String get apiBaseUrlSaved => 'API URL saved — checking connection…';
+
+  @override
   String get offlineCashOnly => 'Offline cash-only';
 
   @override
@@ -587,6 +605,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get supplierDebt => 'Outstanding debt';
 
   @override
+  String get supplierUnpaidInstallments => 'Unpaid installments';
+
+  @override
+  String get viewAllInstallments => 'View all installments';
+
+  @override
+  String get supplierPayablesTitle => 'Supplier payables';
+
+  @override
+  String get supplierPayablesSubtitle =>
+      'One section per supplier — pay against total debt';
+
+  @override
+  String get paySupplierTitle => 'Pay supplier';
+
+  @override
+  String get supplierPaidSuccess => 'Supplier payment recorded.';
+
+  @override
+  String get supplierNoDebt => 'No outstanding debt for this supplier.';
+
+  @override
+  String supplierPayAmountInvalid(Object max) {
+    return 'Amount must be between 0.01 and $max';
+  }
+
+  @override
+  String get payInstallmentLegacy => 'Pay installment';
+
+  @override
   String get save => 'Save';
 
   @override
@@ -758,7 +806,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tapRowForInvoice => 'Tap a row to open the full invoice.';
 
   @override
-  String get customerViewThisWeek => 'This week';
+  String get customerViewThisWeek => 'This week (Mon 9 AM – Sat)';
 
   @override
   String get customerViewHistory => 'Settled / history';
@@ -798,7 +846,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get customerNoWeekInvoices => 'No invoices this week to print.';
 
   @override
-  String get printWeekInvoices => 'Print all (one job)';
+  String get printWeekInvoices => 'Print week statement';
+
+  @override
+  String get printWeekInvoicesDetailed => 'Print each invoice';
+
+  @override
+  String get weekStatementPrinted => 'Week statement sent to printer';
 
   @override
   String weekInvoicesPrinted(Object count) {
@@ -1941,6 +1995,28 @@ class AppLocalizationsEn extends AppLocalizations {
   String get markSettled => 'Mark settled';
 
   @override
+  String get editBranchFinanceEntry => 'Edit entry';
+
+  @override
+  String get voidBranchFinanceEntry => 'Void entry';
+
+  @override
+  String get voidBranchFinanceEntryTitle => 'Void this entry?';
+
+  @override
+  String get voidBranchFinanceEntryHint =>
+      'The balance between branches will be updated. Transfer-linked charges must be reversed via the transfer screen.';
+
+  @override
+  String get branchFinanceEntryUpdated => 'Entry updated';
+
+  @override
+  String get branchFinanceEntryVoided => 'Entry voided';
+
+  @override
+  String get entryVoided => 'Voided';
+
+  @override
   String get needTwoBranches => 'At least two branches are required';
 
   @override
@@ -1981,6 +2057,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get transferUpdated => 'Transfer updated';
+
+  @override
+  String get reverseTransfer => 'Reverse transfer';
+
+  @override
+  String get reverseTransferTitle => 'Reverse completed transfer?';
+
+  @override
+  String get reverseTransferHint =>
+      'Stock returns to the source branch and the inter-branch charge is voided. Dashboard realized cash is not affected.';
+
+  @override
+  String get transferReversed => 'Transfer reversed';
 
   @override
   String get editPayment => 'Edit payment';
@@ -2102,14 +2191,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get businessCapitalSubtitleAdmin =>
-      'Set owner funding used to compare stock and receivables against available cash.';
+      'Adjust opening cash when the drawer count differs from the system. Total capital = inventory + realized cash.';
 
   @override
   String get businessCapitalSubtitleView =>
-      'Financing overview (read-only). Contact an admin to change capital.';
+      'Computed from inventory at cost plus cash on hand (read-only).';
 
   @override
-  String get businessCapitalAmount => 'Owner capital';
+  String get businessCapitalAmount => 'Business capital';
+
+  @override
+  String get businessCapitalFormulaHint => 'Inventory at cost + cash on hand';
+
+  @override
+  String get openingCashBalance => 'Opening cash balance';
+
+  @override
+  String get openingCashSet => 'Set opening cash';
+
+  @override
+  String get openingCashUpdateTitle => 'Update opening cash balance';
+
+  @override
+  String get openingCashUpdateHint =>
+      'Sets the opening cash in the drawer, not total business capital. Inventory is added automatically.';
+
+  @override
+  String get openingCashSaved => 'Opening cash balance saved';
+
+  @override
+  String get openingCashDefaultReason => 'Opening drawer count';
 
   @override
   String get businessCapitalSet => 'Update capital';
@@ -2146,6 +2257,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get withdrawableProfit => 'Withdrawable profit';
 
   @override
+  String get realizedProfit => 'Realized profit';
+
+  @override
+  String get totalProfitWithdrawn => 'Total withdrawn';
+
+  @override
   String get profitWithdrawnSuccess => 'Profit withdrawn';
 
   @override
@@ -2156,7 +2273,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ownerCashOutSubtitle =>
-      'Withdraw realized profit. Business capital is not reduced.';
+      'Deducted from profit margin, not opening cash. Cash on hand and business capital decrease when money leaves the drawer.';
+
+  @override
+  String get ownerCashOutDialogHint =>
+      'Opening cash balance is not changed. Only realized profit limits this withdrawal.';
 
   @override
   String get ownerCashOutRecord => 'Cash out';
@@ -2216,6 +2337,56 @@ class AppLocalizationsEn extends AppLocalizations {
       'POs, installments, and payments this week';
 
   @override
+  String get costOfGoods => 'Cost of goods';
+
+  @override
+  String get dashboardSnapshotTitle => 'Current position';
+
+  @override
+  String get dashboardSnapshotSubtitle =>
+      'Snapshot — does not change with the period tab';
+
+  @override
+  String get periodNetCashFlowDay => 'Net cash flow — today';
+
+  @override
+  String get periodNetCashFlowWeek => 'Net cash flow — this week';
+
+  @override
+  String get periodNetCashFlowMonth => 'Net cash flow — this month';
+
+  @override
+  String get dashboardFinanceOverview => 'Financial overview';
+
+  @override
+  String get dashboardFinanceOverviewSubtitle =>
+      'Capital, cash, and obligations in one place';
+
+  @override
+  String get dashboardPeriodActivity => 'Period activity';
+
+  @override
+  String get cashOnHandRealized => 'Cash on hand';
+
+  @override
+  String get mustCollectCustomers => 'Must collect from customers';
+
+  @override
+  String get mustPaySuppliers => 'Must pay suppliers';
+
+  @override
+  String get weeklyNetCashFlowRealized => 'Weekly net cash flow';
+
+  @override
+  String get weeklyCashInRealized => 'Weekly cash in';
+
+  @override
+  String get weeklyCashOutRealized => 'Weekly cash out';
+
+  @override
+  String get legacyEstimatedAvailable => 'Legacy estimate';
+
+  @override
   String get totalSupplierDebt => 'Total supplier debt';
 
   @override
@@ -2235,6 +2406,57 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get weeklyPurchasesReceived => 'Purchases received (week)';
+
+  @override
+  String get periodRevenue => 'Revenue';
+
+  @override
+  String get periodNetSales => 'Net sales';
+
+  @override
+  String get periodDiscount => 'Discounts';
+
+  @override
+  String get periodGrossProfit => 'Gross profit';
+
+  @override
+  String get periodCustomerRefunds => 'Customer refunds';
+
+  @override
+  String get periodNetCashFlowRealized => 'Net cash flow';
+
+  @override
+  String get periodCashInRealized => 'Cash in';
+
+  @override
+  String get periodCashOutRealized => 'Cash out';
+
+  @override
+  String get periodCashInDay => 'Cash in — today';
+
+  @override
+  String get periodCashInWeek => 'Cash in — this week';
+
+  @override
+  String get periodCashInMonth => 'Cash in — this month';
+
+  @override
+  String get periodCashOutDay => 'Cash out — today';
+
+  @override
+  String get periodCashOutWeek => 'Cash out — this week';
+
+  @override
+  String get periodCashOutMonth => 'Cash out — this month';
+
+  @override
+  String get periodSupplierPayments => 'Supplier payments';
+
+  @override
+  String get periodPurchasesOrdered => 'Purchases ordered';
+
+  @override
+  String get periodPurchasesReceived => 'Purchases received';
 
   @override
   String get payablesOverdueInstallments => 'Overdue installments';

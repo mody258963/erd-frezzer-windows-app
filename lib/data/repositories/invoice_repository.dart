@@ -31,6 +31,8 @@ class InvoiceRepository {
   final ConnectivityCubit _connectivity;
   final _uuid = const Uuid();
 
+  static const maxPerPage = 100;
+
   Future<List<InvoiceModel>> list({
     String? from,
     String? to,
@@ -39,6 +41,7 @@ class InvoiceRepository {
     String? branchId,
     int perPage = 50,
   }) async {
+    final safePerPage = perPage.clamp(1, maxPerPage);
     final response = await _dio.get<dynamic>(
       '/invoices',
       queryParameters: {
@@ -47,7 +50,7 @@ class InvoiceRepository {
         if (customerId != null) 'customer_id': customerId,
         if (paymentType != null) 'payment_type': paymentType,
         if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
-        'per_page': perPage,
+        'per_page': safePerPage,
       },
     );
     return parseList(response.data, InvoiceModel.fromJson);

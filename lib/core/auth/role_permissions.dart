@@ -1,3 +1,4 @@
+import '../../core/l10n/report_labels.dart';
 import '../../data/models/user_role.dart';
 import '../../router/route_paths.dart';
 
@@ -12,7 +13,9 @@ enum AppAction {
   transferCreate,
   transferCancel,
   transferEdit,
+  transferReverse,
   paymentEdit,
+  customerCreate,
   customerDelete,
   invoiceCreate,
   invoiceCancel,
@@ -27,6 +30,7 @@ enum AppAction {
   returnApprove,
   returnReject,
   branchFinanceWrite,
+  branchFinanceEntryEdit,
   userManage,
   capitalEdit,
   capitalView,
@@ -46,7 +50,56 @@ class NavDestination {
   final String routeKey;
 }
 
+/// Central role matrix for navigation tabs and in-app actions.
 class RolePermissions {
+  RolePermissions._();
+
+  static const _all = {
+    UserRole.admin,
+    UserRole.manager,
+    UserRole.salesperson,
+    UserRole.warehouse,
+  };
+
+  static const _management = {UserRole.admin, UserRole.manager};
+
+  static const _sales = {
+    UserRole.admin,
+    UserRole.manager,
+    UserRole.salesperson,
+  };
+
+  static const _supply = {
+    UserRole.admin,
+    UserRole.manager,
+    UserRole.warehouse,
+  };
+
+  /// Main nav destinations each role may see.
+  static const _navRouteRoles = <String, Set<UserRole>>{
+    'dashboard': _all,
+    'pos': _sales,
+    'parts': _all,
+    'customers': _sales,
+    'suppliers': _supply,
+    'returns': _sales,
+    'reports': {
+      UserRole.admin,
+      UserRole.manager,
+      UserRole.salesperson,
+      UserRole.warehouse,
+    },
+    'branches': {
+      UserRole.admin,
+      UserRole.manager,
+      UserRole.salesperson,
+      UserRole.warehouse,
+    },
+    'sync': _sales,
+    'sales': _sales,
+    'settings': _all,
+  };
+
   static const offlineAllowedPrefixes = [
     RoutePaths.pos,
     RoutePaths.sync,
@@ -61,58 +114,146 @@ class RolePermissions {
     );
   }
 
-  static bool canAccessRoute(String path, UserRole role) {
-    if (path.startsWith(RoutePaths.dashboard)) {
-      return true;
+  /// First screen after login (or when a route is denied).
+  static String homeRoute(UserRole role, {required bool isOnline}) {
+    if (!isOnline) return RoutePaths.pos;
+    return switch (role) {
+      UserRole.salesperson => RoutePaths.pos,
+      UserRole.warehouse => RoutePaths.parts,
+      _ => RoutePaths.dashboard,
+    };
+  }
+
+  static String? routeKeyForPath(String path) {
+    if (path.startsWith(RoutePaths.dashboard)) return 'dashboard';
+    if (path.startsWith(RoutePaths.pos)) return 'pos';
+    if (path.startsWith(RoutePaths.parts) ||
+        path.startsWith(RoutePaths.inventory)) {
+      return 'parts';
     }
-    if (path.startsWith(RoutePaths.branches)) {
-      return true;
-    }
-    if (path.startsWith(RoutePaths.parts)) {
-      return true;
-    }
-    if (path.startsWith(RoutePaths.inventory)) {
-      return true;
-    }
-    if (path.startsWith(RoutePaths.transfers) ||
-        path.startsWith(RoutePaths.branchFinance)) {
-      return role != UserRole.salesperson;
-    }
-    if (path.startsWith(RoutePaths.customers)) {
-      return role != UserRole.warehouse;
-    }
-    if (path.startsWith(RoutePaths.pos) ||
+    if (path.startsWith(RoutePaths.customers) ||
         path.startsWith(RoutePaths.invoices) ||
-        path.startsWith(RoutePaths.sales)) {
-      return role != UserRole.warehouse;
-    }
-    if (path.startsWith(RoutePaths.sync)) {
-      return role != UserRole.warehouse;
-    }
-    if (path.startsWith(RoutePaths.settlements)) {
-      return role == UserRole.admin || role == UserRole.manager;
+        path.startsWith(RoutePaths.settlements)) {
+      return 'customers';
     }
     if (path.startsWith(RoutePaths.suppliers) ||
         path.startsWith(RoutePaths.purchases) ||
         path.startsWith(RoutePaths.installments)) {
-      return role != UserRole.salesperson;
+      return 'suppliers';
     }
-    if (path.startsWith(RoutePaths.returns)) {
-      return role != UserRole.warehouse;
+    if (path.startsWith(RoutePaths.returns)) return 'returns';
+    if (path.startsWith('/reports') || path.startsWith(RoutePaths.reports)) {
+      return 'reports';
     }
-    if (path.startsWith('/reports')) {
-      return true;
+    if (path.startsWith(RoutePaths.branches) ||
+        path.startsWith(RoutePaths.transfers) ||
+        path.startsWith(RoutePaths.branchFinance)) {
+      return 'branches';
     }
+    if (path.startsWith(RoutePaths.sync)) return 'sync';
+    if (path.startsWith(RoutePaths.sales)) return 'sales';
+    if (path.startsWith(RoutePaths.settings)) return 'settings';
+    return null;
+  }
+
+  static bool canAccessRoute(String path, UserRole role) {
     if (path.contains('part-categories')) {
-      return role == UserRole.admin || role == UserRole.manager;
+      return _management.contains(role);
     }
     if (path.contains('/settings/users')) {
       return role == UserRole.admin;
     }
-    if (path.startsWith(RoutePaths.settings)) {
-      return true;
+
+    if (path.startsWith('/reports') || path.startsWith(RoutePaths.reports)) {
+      return canAccessReportPath(path, role);
     }
-    return true;
+
+    final key = routeKeyForPath(path);
+    if (key == null) return false;
+    return _navRouteRoles[key]?.contains(role) ?? false;
+  }
+
+  /// Hub sub-tabs (e.g. customers → settlements).
+  static bool canAccessHubTab(
+    String hubRouteKey,
+    String tabId,
+    UserRole role,
+  ) {
+    switch (hubRouteKey) {
+      case 'customers':
+        return switch (tabId) {
+          'customers' => _sales.contains(role),
+          'settlements' => canPerform(AppAction.settlementCreate, role),
+          'invoices' => canPerform(AppAction.invoiceCreate, role),
+          _ => false,
+        };
+      case 'branches':
+        return switch (tabId) {
+          'branches' => _navRouteRoles['branches']!.contains(role),
+          'transfers' => canPerform(AppAction.transferCreate, role),
+          'finance' => canPerform(AppAction.branchFinanceWrite, role),
+          _ => false,
+        };
+      case 'suppliers':
+        return switch (tabId) {
+          'suppliers' => _supply.contains(role),
+          'purchases' =>
+            canPerform(AppAction.purchaseCreate, role) ||
+                canPerform(AppAction.purchaseReceive, role),
+          'payables' => canPerform(AppAction.installmentPay, role),
+          'installments' => canPerform(AppAction.installmentPay, role),
+          _ => false,
+        };
+      case 'parts':
+        return switch (tabId) {
+          'parts' => _navRouteRoles['parts']!.contains(role),
+          'stock' => _navRouteRoles['parts']!.contains(role),
+          _ => false,
+        };
+      default:
+        return false;
+    }
+  }
+
+  static bool canAccessReport(ReportKind kind, UserRole role) {
+    return switch (kind) {
+      ReportKind.sales => _sales.contains(role),
+      ReportKind.inventory => _supply.contains(role),
+      ReportKind.customers => _sales.contains(role),
+      ReportKind.suppliers => _supply.contains(role),
+      ReportKind.returns => _sales.contains(role),
+    };
+  }
+
+  static bool canAccessFinancialReport(UserRole role) =>
+      _management.contains(role);
+
+  static bool canAccessReportPath(String path, UserRole role) {
+    if (path == RoutePaths.reports) {
+      return _navRouteRoles['reports']!.contains(role);
+    }
+    if (path.startsWith(RoutePaths.reportsFinancial)) {
+      return canAccessFinancialReport(role);
+    }
+    if (path.startsWith(RoutePaths.reportsSales)) {
+      return canAccessReport(ReportKind.sales, role);
+    }
+    if (path.startsWith(RoutePaths.reportsInventory)) {
+      return canAccessReport(ReportKind.inventory, role);
+    }
+    if (path.startsWith(RoutePaths.reportsCustomers)) {
+      return canAccessReport(ReportKind.customers, role);
+    }
+    if (path.startsWith(RoutePaths.reportsSuppliers)) {
+      return canAccessReport(ReportKind.suppliers, role);
+    }
+    if (path.startsWith(RoutePaths.reportsReturns)) {
+      return canAccessReport(ReportKind.returns, role);
+    }
+    if (path.startsWith(RoutePaths.reportsPartsSalesChart)) {
+      return canAccessReport(ReportKind.sales, role);
+    }
+    return _navRouteRoles['reports']!.contains(role);
   }
 
   static bool canPerform(AppAction action, UserRole role) {
@@ -122,51 +263,55 @@ class RolePermissions {
         return role == UserRole.admin;
       case AppAction.partCreate:
       case AppAction.partCategoryManage:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
       case AppAction.partCategoryDeactivate:
-        return role == UserRole.admin;
       case AppAction.partDelete:
         return role == UserRole.admin;
       case AppAction.inventoryAdjust:
         return role == UserRole.admin || role == UserRole.warehouse;
       case AppAction.transferCreate:
-        return role != UserRole.salesperson;
+        return _supply.contains(role);
       case AppAction.transferCancel:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
       case AppAction.transferEdit:
       case AppAction.paymentEdit:
         return role == UserRole.admin;
+      case AppAction.transferReverse:
+      case AppAction.branchFinanceEntryEdit:
+        return role == UserRole.admin;
+      case AppAction.customerCreate:
+        return _sales.contains(role);
       case AppAction.customerDelete:
         return role == UserRole.admin;
       case AppAction.invoiceCreate:
-        return role != UserRole.warehouse;
+        return _sales.contains(role);
       case AppAction.invoiceCancel:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
       case AppAction.settlementCreate:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
       case AppAction.supplierCreate:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
       case AppAction.supplierDelete:
         return role == UserRole.admin;
       case AppAction.purchaseCreate:
       case AppAction.purchaseCancel:
       case AppAction.installmentPay:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
       case AppAction.purchaseReceive:
-        return role != UserRole.salesperson;
+        return _supply.contains(role);
       case AppAction.returnCreate:
-        return role != UserRole.warehouse;
+        return _sales.contains(role);
       case AppAction.returnApprove:
       case AppAction.returnReject:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
       case AppAction.branchFinanceWrite:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
       case AppAction.userManage:
         return role == UserRole.admin;
       case AppAction.capitalEdit:
         return role == UserRole.admin;
       case AppAction.capitalView:
-        return role == UserRole.admin || role == UserRole.manager;
+        return _management.contains(role);
     }
   }
 
@@ -243,7 +388,9 @@ class RolePermissions {
       ),
     ];
 
-    var filtered = all.where((d) => canAccessRoute(d.path, role)).toList();
+    var filtered = all
+        .where((d) => _navRouteRoles[d.routeKey]?.contains(role) ?? false)
+        .toList();
 
     if (!isOnline) {
       filtered = filtered
@@ -251,10 +398,12 @@ class RolePermissions {
             (d) =>
                 d.routeKey == 'pos' ||
                 d.routeKey == 'sync' ||
-                d.routeKey == 'sales',
+                d.routeKey == 'sales' ||
+                d.routeKey == 'settings',
           )
           .toList();
-      if (!filtered.any((d) => d.routeKey == 'pos')) {
+      if (!filtered.any((d) => d.routeKey == 'pos') &&
+          _navRouteRoles['pos']!.contains(role)) {
         filtered.insert(
           0,
           const NavDestination(

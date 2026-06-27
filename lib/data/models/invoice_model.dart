@@ -137,7 +137,9 @@ class InvoiceModel {
     return InvoiceModel(
       id: json['id'] as String,
       customerId: json['customer_id'] as String,
-      branchId: json['branch_id'] as String,
+      branchId: (json['branch_id'] as String?) ??
+          (branch?['id'] as String?) ??
+          '',
       paymentType: json['payment_type'] as String,
       total: (json['total'] as num).toDouble(),
       discount: (json['discount'] as num?)?.toDouble() ?? 0,

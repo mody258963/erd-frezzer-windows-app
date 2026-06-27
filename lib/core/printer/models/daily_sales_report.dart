@@ -1,3 +1,5 @@
+import '../../../core/utils/payment_type.dart';
+
 class DailySalesReportLine {
   const DailySalesReportLine({
     required this.invoiceNumber,
@@ -17,7 +19,17 @@ class DailySalesReportLine {
   final double discount;
   final bool pending;
 
-  bool get isCash => paymentType.toLowerCase() == 'cash';
+  bool get isCash => isCashPaymentType(paymentType);
+}
+
+class DailyDrawerLine {
+  const DailyDrawerLine({
+    required this.label,
+    required this.amount,
+  });
+
+  final String label;
+  final double amount;
 }
 
 class DailySalesReport {
@@ -30,6 +42,13 @@ class DailySalesReport {
     required this.discountTotal,
     required this.grandTotal,
     this.branchName,
+    this.cashSalesTotal = 0,
+    this.collections = const [],
+    this.outflows = const [],
+    this.cashInTotal = 0,
+    this.cashOutTotal = 0,
+    this.drawerTotal = 0,
+    this.collectionsDetailUnavailable = false,
   });
 
   final String date;
@@ -40,4 +59,21 @@ class DailySalesReport {
   final double creditTotal;
   final double discountTotal;
   final double grandTotal;
+
+  /// Drawer report fields (hybrid: line items + dashboard totals).
+  final double cashSalesTotal;
+  final List<DailyDrawerLine> collections;
+  final List<DailyDrawerLine> outflows;
+  final double cashInTotal;
+  final double cashOutTotal;
+  final double drawerTotal;
+  final bool collectionsDetailUnavailable;
+
+  double get collectionsTotal =>
+      collections.fold(0.0, (sum, line) => sum + line.amount);
+
+  double get outflowsTotal => outflows.fold(0.0, (sum, line) => sum + line.amount);
+
+  double get computedDrawerTotal =>
+      cashSalesTotal + collectionsTotal - outflowsTotal;
 }

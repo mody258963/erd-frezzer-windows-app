@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/role_context.dart';
+import '../../core/auth/role_permissions.dart';
 import '../../core/branch/branch_filter_scope.dart';
 import '../../core/l10n/l10n_extension.dart';
 import '../../core/theme/app_colors.dart';
@@ -10,6 +12,7 @@ import '../../data/repositories/dashboard_repository.dart';
 import '../../data/repositories/invoice_repository.dart';
 import '../../data/repositories/part_repository.dart';
 import '../../data/repositories/report_repository.dart';
+import '../../core/dashboard/dashboard_period.dart';
 import '../../core/events/app_refresh_bus.dart';
 import '../../di/injection.dart';
 import '../../router/route_paths.dart';
@@ -17,14 +20,11 @@ import '../shared/loading_error.dart';
 import '../shared/page_scaffold.dart';
 import '../shared/status_chip.dart';
 import 'dashboard_cubit.dart';
+import 'dashboard_period_labels.dart';
 import 'widgets/activity_timeline.dart';
-import 'widgets/dashboard_finance_summary_row.dart';
+import 'widgets/dashboard_finance_hub.dart';
 import 'widgets/dashboard_kpi_grid.dart';
-import 'widgets/dashboard_supplier_panel.dart';
-import 'widgets/business_capital_banner.dart';
-import 'dashboard_summary_utils.dart';
 import 'widgets/dashboard_section.dart';
-import 'widgets/finance_panel.dart';
 import 'widgets/parts_sales_chart_panel.dart';
 import 'widgets/product_ranking.dart';
 
@@ -75,12 +75,21 @@ class _DashboardBodyState extends State<_DashboardBody> {
   void _onRefresh(AppRefreshKind kind) {
     if (!mounted) return;
     if (kind != AppRefreshKind.dashboard &&
-        kind != AppRefreshKind.branchFilter) {
+        kind != AppRefreshKind.branchFilter &&
+        kind != AppRefreshKind.settlements) {
       return;
     }
-    context
-        .read<DashboardCubit>()
-        .load(branchId: apiBranchIdFromContext(context));
+    context.read<DashboardCubit>().load(
+          branchId: apiBranchIdFromContext(context),
+          period: context.read<DashboardCubit>().state.period,
+        );
+  }
+
+  Future<void> _reloadDashboard() async {
+    await context.read<DashboardCubit>().load(
+          branchId: apiBranchIdFromContext(context),
+          period: context.read<DashboardCubit>().state.period,
+        );
   }
 
   @override
@@ -93,8 +102,7 @@ class _DashboardBodyState extends State<_DashboardBody> {
         if (state.error != null) {
           return ErrorView(
             message: state.error!,
-            onRetry: () =>
-                context.read<DashboardCubit>().load(branchId: apiBranchIdFromContext(context)),
+            onRetry: _reloadDashboard,
           );
         }
 
@@ -104,41 +112,23 @@ class _DashboardBodyState extends State<_DashboardBody> {
         final points = (sales['points'] as List<dynamic>?) ?? [];
         final scheme = Theme.of(context).colorScheme;
 
-        final payablesList = (state.payables?['suppliers'] as List<dynamic>?) ??
-            (state.payables?['items'] as List<dynamic>?) ??
-            [];
-        final payablesMaps = payablesList
-            .whereType<Map>()
-            .map((e) => Map<String, dynamic>.from(e))
-            .toList();
-        final payablesTotal = summary.containsKey('total_supplier_debt')
-            ? summary['total_supplier_debt']
-            : (state.payables?['total'] ??
-                state.payables?['total_payable'] ??
-                0);
+        final periodRange = dashboardPeriodRangeLabel(context, state.periodInfo);
 
-        final receivablesTotal = summary.containsKey('total_receivables')
-            ? summaryNum(summary, 'total_receivables')
-            : state.receivables.fold<num>(
-                0,
-                (s, r) =>
-                    s + ((r['outstanding_balance'] ?? r['balance'] ?? 0) as num),
-              );
-
-        Future<void> refreshDashboard() =>
-            context.read<DashboardCubit>().load(branchId: apiBranchIdFromContext(context));
+        Future<void> refreshDashboard() => _reloadDashboard();
 
         return PageScaffold(
           scrollable: false,
           title: l10n.dashboardTitle,
-          subtitle: l10n.dashboardSubtitle,
+          subtitle: periodRange ?? l10n.dashboardSubtitle,
           actions: [
-            FilledButton.tonalIcon(
-              onPressed: () => context.go(RoutePaths.pos),
-              icon: const Icon(Icons.point_of_sale, size: 18),
-              label: Text(l10n.openPos),
-            ),
-            const SizedBox(width: 8),
+            if (context.canPerform(AppAction.invoiceCreate))
+              FilledButton.tonalIcon(
+                onPressed: () => context.go(RoutePaths.pos),
+                icon: const Icon(Icons.point_of_sale, size: 18),
+                label: Text(l10n.openPos),
+              ),
+            if (context.canPerform(AppAction.invoiceCreate))
+              const SizedBox(width: 8),
             IconButton(
               onPressed: refreshDashboard,
               icon: const Icon(Icons.refresh),
@@ -156,18 +146,28 @@ class _DashboardBodyState extends State<_DashboardBody> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      _DashboardPeriodFilter(
+                        period: state.period,
+                        onChanged: (period) => context
+                            .read<DashboardCubit>()
+                            .setPeriod(
+                              period,
+                              branchId: apiBranchIdFromContext(context),
+                            ),
+                      ),
+                      const SizedBox(height: 16),
                       DashboardKpiGrid(
                         summary: summary,
+                        period: state.period,
                         dailyProfit: state.dailyProfit,
                       ),
                       const SizedBox(height: 16),
-                      DashboardFinanceSummaryRow(summary: summary),
-                      const SizedBox(height: 16),
-                      BusinessCapitalBanner(summary: summary),
-                      const SizedBox(height: 16),
-                      DashboardSupplierPanel(
+                      DashboardFinanceHub(
                         summary: summary,
+                        cash: state.cash,
+                        receivables: state.receivables,
                         payables: state.payables,
+                        period: state.period,
                       ),
                       const SizedBox(height: 16),
                       PartsSalesChartPanel(data: state.partsSalesChart),
@@ -208,56 +208,6 @@ class _DashboardBodyState extends State<_DashboardBody> {
                         _ActivityCard(activity: state.activity),
                       ],
                       const SizedBox(height: 24),
-                      if (wide)
-                        Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: FinancePanel(
-                                title: l10n.receivablesTitle,
-                                totalLabel: l10n.totalReceivable,
-                                topLabel: l10n.topDebtors,
-                                total: receivablesTotal,
-                                items: state.receivables,
-                                emptyMessage: l10n.noDebtors,
-                                accentColor: scheme.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: FinancePanel(
-                                title: l10n.payablesTitle,
-                                totalLabel: l10n.totalPayable,
-                                topLabel: l10n.topCreditors,
-                                total: payablesTotal as num,
-                                items: payablesMaps,
-                                emptyMessage: l10n.noCreditors,
-                                accentColor: AppColors.secondary,
-                              ),
-                            ),
-                          ],
-                        )
-                      else ...[
-                        FinancePanel(
-                          title: l10n.receivablesTitle,
-                          totalLabel: l10n.totalReceivable,
-                          topLabel: l10n.topDebtors,
-                          total: receivablesTotal,
-                          items: state.receivables,
-                          emptyMessage: l10n.noDebtors,
-                          accentColor: scheme.primary,
-                        ),
-                        const SizedBox(height: 16),
-                        FinancePanel(
-                          title: l10n.payablesTitle,
-                          totalLabel: l10n.totalPayable,
-                          topLabel: l10n.topCreditors,
-                          total: payablesTotal as num,
-                          items: payablesMaps,
-                          emptyMessage: l10n.noCreditors,
-                          accentColor: AppColors.secondary,
-                        ),
-                      ],
                       if (state.inventoryAlerts.isNotEmpty) ...[
                         const SizedBox(height: 24),
                         DashboardSection(
@@ -313,6 +263,42 @@ class _DashboardBodyState extends State<_DashboardBody> {
           ),
         );
       },
+    );
+  }
+}
+
+class _DashboardPeriodFilter extends StatelessWidget {
+  const _DashboardPeriodFilter({
+    required this.period,
+    required this.onChanged,
+  });
+
+  final DashboardPeriod period;
+  final ValueChanged<DashboardPeriod> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    return SegmentedButton<DashboardPeriod>(
+      segments: [
+        ButtonSegment(
+          value: DashboardPeriod.day,
+          label: Text(l10n.dashboardPeriodToday),
+          icon: const Icon(Icons.today_outlined, size: 18),
+        ),
+        ButtonSegment(
+          value: DashboardPeriod.week,
+          label: Text(l10n.dashboardPeriodWeek),
+          icon: const Icon(Icons.date_range_outlined, size: 18),
+        ),
+        ButtonSegment(
+          value: DashboardPeriod.month,
+          label: Text(l10n.dashboardPeriodMonth),
+          icon: const Icon(Icons.calendar_month_outlined, size: 18),
+        ),
+      ],
+      selected: {period},
+      onSelectionChanged: (selection) => onChanged(selection.first),
     );
   }
 }

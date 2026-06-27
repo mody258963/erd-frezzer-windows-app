@@ -60,7 +60,7 @@ class CapitalRepository {
     return parseList(r.data, (j) => j);
   }
 
-  /// Owner withdrawal from realized profit — does not reduce capital.
+  /// Owner withdrawal from realized profit — reduces cash, not opening cash.
   Future<CapitalSettings> cashOut({
     required double amount,
     String? reason,
@@ -76,15 +76,26 @@ class CapitalRepository {
         if (branchId != null && branchId.isNotEmpty) 'branch_id': branchId,
       },
     );
-    return _capitalFromCashOutResponse(r.data);
+    try {
+      return _capitalFromCashOutResponse(r.data);
+    } on FormatException {
+      return get(branchId: branchId);
+    }
   }
 
   CapitalSettings _capitalFromCashOutResponse(dynamic data) {
     final root = parseObject(data);
-    final capital = root['capital'];
-    if (capital is Map) {
-      return CapitalSettings.fromJson(Map<String, dynamic>.from(capital));
+    final capitalRaw = root['capital'];
+    final merged = <String, dynamic>{};
+    if (capitalRaw is Map) {
+      merged.addAll(Map<String, dynamic>.from(capitalRaw));
+    } else {
+      merged.addAll(root);
     }
-    return CapitalSettings.fromJson(root);
+    final profit = root['profit_withdrawal'];
+    if (profit != null && merged['profit_withdrawal'] == null) {
+      merged['profit_withdrawal'] = profit;
+    }
+    return CapitalSettings.fromJson(merged);
   }
 }

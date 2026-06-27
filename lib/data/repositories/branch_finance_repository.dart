@@ -58,4 +58,20 @@ class BranchFinanceRepository {
     final r = await _dio.patch<dynamic>('/branch-finance/entries/$id/settle');
     return parseObject(r.data);
   }
+
+  Future<Map<String, dynamic>> updateEntry(
+    String id,
+    Map<String, dynamic> body,
+  ) async {
+    final r = await _dio.patch<dynamic>(
+      '/branch-finance/entries/$id',
+      data: body,
+    );
+    return parseObject(r.data);
+  }
+
+  Future<Map<String, dynamic>> voidEntry(String id) async {
+    final r = await _dio.delete<dynamic>('/branch-finance/entries/$id');
+    return parseObject(r.data);
+  }
 }

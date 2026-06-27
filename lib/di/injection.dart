@@ -45,13 +45,13 @@ Future<void> setupInjection() async {
   getIt.registerSingleton<SharedPreferences>(prefs);
   getIt.registerSingleton<SecureStorage>(SecureStorage());
   getIt.registerSingleton<SettingsService>(SettingsService(prefs));
-  getIt.registerSingleton<DioClient>(
-    DioClient(getIt(), getIt()),
-  );
+  getIt.registerSingleton<DioClient>(DioClient(getIt(), getIt()));
   getIt.registerSingleton<AppDatabase>(AppDatabase());
   getIt.registerSingleton<AppRefreshBus>(AppRefreshBus());
 
-  getIt.registerLazySingleton(() => AuthRepository(getIt<DioClient>().dio, getIt()));
+  getIt.registerLazySingleton(
+    () => AuthRepository(getIt<DioClient>().dio, getIt()),
+  );
 
   getIt.registerLazySingleton<ConnectivityCubit>(
     () => ConnectivityCubit(getIt<DioClient>().dio),
@@ -72,22 +72,32 @@ Future<void> setupInjection() async {
   getIt.registerLazySingleton<PartCategoryRepository>(
     () => PartCategoryRepository(getIt<DioClient>().dio),
   );
-  getIt.registerLazySingleton(() => DashboardRepository(getIt<DioClient>().dio));
-  getIt.registerLazySingleton(() => InventoryRepository(getIt<DioClient>().dio));
+  getIt.registerLazySingleton(
+    () => DashboardRepository(getIt<DioClient>().dio),
+  );
+  getIt.registerLazySingleton(
+    () => InventoryRepository(getIt<DioClient>().dio),
+  );
   getIt.registerLazySingleton(() => CustomerRepository(getIt<DioClient>().dio));
-  getIt.registerLazySingleton(() => InvoiceRepository(
-        getIt<DioClient>().dio,
-        getIt(),
-        getIt<ConnectivityCubit>(),
-      ));
+  getIt.registerLazySingleton(
+    () => InvoiceRepository(
+      getIt<DioClient>().dio,
+      getIt(),
+      getIt<ConnectivityCubit>(),
+    ),
+  );
   getIt.registerLazySingleton(() => TransferRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton(
     () => BranchFinanceRepository(getIt<DioClient>().dio),
   );
-  getIt.registerLazySingleton(() => SettlementRepository(getIt<DioClient>().dio));
+  getIt.registerLazySingleton(
+    () => SettlementRepository(getIt<DioClient>().dio),
+  );
   getIt.registerLazySingleton(() => SupplierRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton(() => PurchaseRepository(getIt<DioClient>().dio));
-  getIt.registerLazySingleton(() => InstallmentRepository(getIt<DioClient>().dio));
+  getIt.registerLazySingleton(
+    () => InstallmentRepository(getIt<DioClient>().dio),
+  );
   getIt.registerLazySingleton(() => ReturnRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton(() => ReportRepository(getIt<DioClient>().dio));
   getIt.registerLazySingleton(() => UserRepository(getIt<DioClient>().dio));

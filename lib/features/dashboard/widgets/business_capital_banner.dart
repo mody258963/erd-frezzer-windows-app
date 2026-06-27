@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/l10n/api_labels.dart';
 import '../../../core/l10n/l10n_extension.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../data/models/capital_model.dart';
 import '../../../router/route_paths.dart';
-import '../../shared/financing_snapshot_panel.dart';
+import '../../shared/business_capital_breakdown.dart';
 
 /// Capital headline from `GET /dashboard/summary`.
 class BusinessCapitalBanner extends StatelessWidget {
@@ -19,22 +18,50 @@ class BusinessCapitalBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final capital = summary['business_capital'];
-    if (capital == null) return const SizedBox.shrink();
+    final businessCapital = summary['business_capital'];
+    if (businessCapital == null) return const SizedBox.shrink();
 
     final l10n = context.l10n;
     final currency = '${summary['capital_currency'] ?? 'EGP'}';
-    final available = summary['capital_estimated_available'];
-    final snapRaw = summary['financing_snapshot'] ?? summary['capital'];
-    final snapshot = snapRaw is Map<String, dynamic>
-        ? FinancingSnapshot.fromJson(snapRaw)
-        : null;
+    final stock = _num(summary['total_stock_value_cost']);
+    final cash = _num(summary['cash_on_hand_realized']);
+    final total = businessCapital is num
+        ? businessCapital.toDouble()
+        : double.tryParse('$businessCapital') ?? stock + cash;
 
-    String money(num? v) {
-      final f = formatMoney(context, v);
-      return currency.isEmpty ? f : '$f $currency';
+    final snapRaw = summary['financing_snapshot'];
+    if (stock <= 0 && snapRaw is Map<String, dynamic>) {
+      final snap = FinancingSnapshot.fromJson(snapRaw);
+      if (snap.inventoryAtCost > 0) {
+        return _card(
+          context,
+          l10n,
+          currency,
+          total: total > 0 ? total : snap.businessCapital,
+          stock: snap.inventoryAtCost,
+          cash: cash > 0 ? cash : snap.cashOnHandRealized,
+        );
+      }
     }
 
+    return _card(
+      context,
+      l10n,
+      currency,
+      total: total,
+      stock: stock,
+      cash: cash,
+    );
+  }
+
+  Widget _card(
+    BuildContext context,
+    dynamic l10n,
+    String currency, {
+    required double total,
+    required double stock,
+    required double cash,
+  }) {
     return Card(
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(14),
@@ -64,33 +91,13 @@ class BusinessCapitalBanner extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 12),
-            Wrap(
-              spacing: 16,
-              runSpacing: 8,
-              children: [
-                _HeadlineChip(
-                  label: l10n.businessCapitalAmount,
-                  value: money(capital is num ? capital : num.tryParse('$capital')),
-                ),
-                if (available != null)
-                  _HeadlineChip(
-                    label: l10n.capitalEstimatedAvailable,
-                    value: money(
-                      available is num ? available : num.tryParse('$available'),
-                    ),
-                    highlight: true,
-                  ),
-              ],
+            BusinessCapitalBreakdown(
+              businessCapital: total,
+              inventoryAtCost: stock,
+              cashOnHandRealized: cash,
+              currency: currency,
+              compact: true,
             ),
-            if (snapshot != null &&
-                (snapshot.deployedCapital > 0 ||
-                    snapshot.inventoryAtCost > 0)) ...[
-              const SizedBox(height: 14),
-              FinancingSnapshotPanel(
-                snapshot: snapshot,
-                compact: true,
-              ),
-            ],
           ],
         ),
       ),
@@ -98,37 +105,7 @@ class BusinessCapitalBanner extends StatelessWidget {
   }
 }
 
-class _HeadlineChip extends StatelessWidget {
-  const _HeadlineChip({
-    required this.label,
-    required this.value,
-    this.highlight = false,
-  });
-
-  final String label;
-  final String value;
-  final bool highlight;
-
-  @override
-  Widget build(BuildContext context) {
-    final color = highlight ? AppColors.success : AppColors.primary;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          value,
-          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                fontWeight: FontWeight.w800,
-                color: color,
-              ),
-        ),
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-        ),
-      ],
-    );
-  }
+double _num(dynamic v) {
+  if (v is num) return v.toDouble();
+  return double.tryParse('$v') ?? 0;
 }
